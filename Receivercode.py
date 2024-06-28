@@ -13,8 +13,8 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       
         ByteField("protocol", 143),                 
         XShortField("checksum", 0),                 
-        IPField("src", "128.110.217.195"),           
-        IPField("dst", "128.110.217.194")             
+        IPField("src", "192.168.163.1"),           
+        IPField("dst", "192.168.89.128")             
     ]
 
 # Function to handle incoming packets
@@ -37,10 +37,10 @@ def handle_packet(packet):
         print(f"Sent response packet: {response_packet.summary()}")
 
 # Function to start sniffing
-def start_sniffing(interface="eno1"):
+def start_sniffing(interface="ens33"):
     sniff(iface=interface, filter="ip", prn=handle_packet)
 
 if __name__ == "__main__":
     # Ensure you have the correct network interface
-    interface = "eno1"  # Replace with the correct interface name if needed
+    interface = "ens33"  # Replace with the correct interface name if needed
     start_sniffing(interface)
