@@ -1,21 +1,21 @@
 from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum
 
-# Define a custom header class
+# Define a custom header class for the receiver
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
-        BitField("version", 4, 4),                  
-        BitField("header_length", 5, 4),            
-        ShortField("total_length", 40),             
-        ShortField("identification", 1234),         
-        BitField("flags", 0, 3),                    
-        BitField("fragment_offset", 0, 13),         
-        ByteField("ttl", 64),                       
-        ByteField("protocol", 143),                 
-        XShortField("checksum", 0),                 
+        BitField("version", 4, 4),                  # IPv4 version
+        BitField("header_length", 5, 4),            # Header length (5 words)
+        ShortField("total_length", 40),             # Total length of IP header + payload
+        ShortField("identification", 1234),         # Identification number
+        BitField("flags", 0, 3),                    # Flags
+        BitField("fragment_offset", 0, 13),         # Fragment offset
+        ByteField("ttl", 64),                       # Time To Live (TTL)
+        ByteField("protocol", 143),                 # Protocol number (customize as needed)
+        XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         ShortField("seq_num", 0),                   # Sequence number
-        IPField("src", "192.168.163.1"),           
-        IPField("dst", "192.168.89.128")             
+        IPField("src", "192.168.163.1"),            # Source IP address
+        IPField("dst", "192.168.89.128")            # Destination IP address
     ]
 
 # Function to verify the checksum
@@ -35,7 +35,8 @@ def handle_packet(packet):
         if verify_checksum(packet):
             print("Checksum is valid.")
         else:
-            print("Checksum is not valid.")
+            print("Checksum is invalid.")
+            return  # Skip processing if checksum is invalid
 
         # Create an acknowledgment packet
         ack_header = MyCustomHeader(
