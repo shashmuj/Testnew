@@ -4,51 +4,25 @@ from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPFi
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
-        BitField("version", 4, 4),                  # IPv4 version
-        BitField("header_length", 5, 4),            # Header length (5 words)
-        ShortField("total_length", 40),             # Total length of IP header + payload
-        ShortField("identification", 1234),         # Identification number
-        BitField("flags", 0, 3),                    # Flags
-        BitField("fragment_offset", 0, 13),         # Fragment offset
-        ByteField("ttl", 64),                       # Time To Live (TTL)
-        ByteField("protocol", 143),                 # Protocol number (customize as needed)
-        XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        ShortField("seq_num", 0),                   # Sequence number
-        IPField("src", "192.168.163.1"),            # Source IP address
-        IPField("dst", "192.168.89.128")            # Destination IP address
+        BitField("version", 4, 4),                  
+        BitField("header_length", 5, 4),            
+        ShortField("total_length", 40),             
+        ShortField("identification", 1234),         
+        BitField("flags", 0, 3),                    
+        BitField("fragment_offset", 0, 13),         
+        ByteField("ttl", 64),                       
+        ByteField("protocol", 143),                 
+        XShortField("checksum", 0),                 
+        ShortField("seq_num", 0),                  
+        IPField("src", "192.168.163.1"),           
+        IPField("dst", "192.168.89.128")             
     ]
-
-# Function to verify the checksum
-def verify_checksum(packet):
-    original_checksum = packet[MyCustomHeader].checksum
-    packet[MyCustomHeader].checksum = 0
-    computed_checksum = checksum(bytes(packet[MyCustomHeader]))
-    packet[MyCustomHeader].checksum = original_checksum
-    return original_checksum == computed_checksum
 
 # Function to handle incoming packets
 def handle_packet(packet):
     if MyCustomHeader in packet:
         custom_header = packet[MyCustomHeader]
-        print(f"Received packet:")
-        print(f"Version: {custom_header.version}")
-        print(f"Header Length: {custom_header.header_length}")
-        print(f"Total Length: {custom_header.total_length}")
-        print(f"Identification: {custom_header.identification}")
-        print(f"Flags: {custom_header.flags}")
-        print(f"Fragment Offset: {custom_header.fragment_offset}")
-        print(f"TTL: {custom_header.ttl}")
-        print(f"Protocol: {custom_header.protocol}")
-        print(f"Checksum: {hex(custom_header.checksum)}")
-        print(f"Sequence Number: {custom_header.seq_num}")
-        print(f"Source IP: {custom_header.src}")
-        print(f"Destination IP: {custom_header.dst}")
-
-        # Validate checksum
-        if verify_checksum(packet):
-            print("Checksum is valid.")
-        else:
-            print("Checksum is invalid.")
+        print(f"Received packet: {custom_header.summary()}")
 
         # Create an acknowledgment packet
         ack_header = MyCustomHeader(
@@ -62,21 +36,7 @@ def handle_packet(packet):
 
         # Send the acknowledgment packet
         send(ack_packet)
-        print(f"Sent acknowledgment packet:")
-        print(f"Version: {ack_header.version}")
-        print(f"Header Length: {ack_header.header_length}")
-        print(f"Total Length: {ack_header.total_length}")
-        print(f"Identification: {ack_header.identification}")
-        print(f"Flags: {ack_header.flags}")
-        print(f"Fragment Offset: {ack_header.fragment_offset}")
-        print(f"TTL: {ack_header.ttl}")
-        print(f"Protocol: {ack_header.protocol}")
-        print(f"Checksum: {hex(ack_header.checksum)}")
-        print(f"Sequence Number: {ack_header.seq_num}")
-        print(f"Source IP: {ack_header.src}")
-        print(f"Destination IP: {ack_header.dst}")
-    else:
-        print("Received packet does not match MyCustomHeader")
+        print(f"Sent acknowledgment packet: {ack_packet.summary()}")
 
 # Function to start sniffing
 def start_sniffing(interface="ens33"):
@@ -84,5 +44,6 @@ def start_sniffing(interface="ens33"):
     sniff(iface=interface, filter="ip", prn=handle_packet)
 
 if __name__ == "__main__":
-    interface = "ens33"
+    # Ensure you have the correct network interface
+    interface = "ens33"  # Replace with the correct interface name if needed
     start_sniffing(interface)
