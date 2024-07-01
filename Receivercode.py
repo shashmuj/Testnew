@@ -14,8 +14,8 @@ class MyCustomHeader(Packet):
         ByteField("protocol", 143),                 
         XShortField("checksum", 0),                 
         ShortField("seq_num", 0),                  
-        IPField("src", "192.168.163.1"),           
-        IPField("dst", "192.168.89.128")             
+        IPField("src", "128.110.217.142"),           
+        IPField("dst", "128.110.217.34")             
     ]
 
 # Function to handle incoming packets
@@ -45,5 +45,5 @@ def start_sniffing(interface="ens33"):
 
 if __name__ == "__main__":
     # Ensure you have the correct network interface
-    interface = "ens33"  # Replace with the correct interface name if needed
+    interface = "eno1"  # Replace with the correct interface name if needed
     start_sniffing(interface)

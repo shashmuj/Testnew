@@ -1,4 +1,5 @@
 from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, checksum
+import struct
 
 # Define a custom header class for the sender
 class MyCustomHeader(Packet):
@@ -13,15 +14,17 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 143),                 # Protocol number (customize as needed)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        IPField("src", "192.168.163.1"),            # Source IP address
-        IPField("dst", "192.168.89.128")            # Destination IP address
+        IPField("src", "128.110.217.142"),            # Source IP address
+        IPField("dst", "128.110.217.34")            # Destination IP address
     ]
 
     def post_build(self, p, pay):
         # Calculate checksum if not provided
         if self.checksum == 0:
             chksum = checksum(p)
-            p = p[:10] + chksum.to_bytes(2, byteorder='big') + p[12:]
+            # Convert the checksum to bytes using struct.pack for Python 2.7 compatibility
+            chksum_bytes = struct.pack('!H', chksum)
+            p = p[:10] + chksum_bytes + p[12:]
         return p + pay
 
 # Function to send custom packets
@@ -35,12 +38,12 @@ def send_custom_ipv4_packet(target_ip, custom_header_params):
 
 # Example usage
 if __name__ == "__main__":
-    target_ip = "192.168.89.128"
+    target_ip = "128.110.217.34"
 
     # Define custom header parameters
     custom_header_params = {
         "protocol": 143,
-        "src": "192.168.163.1",
+        "src": "128.110.217.142",
         "dst": target_ip
     }
 
