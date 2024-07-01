@@ -12,18 +12,17 @@ class MyCustomHeader(Packet):
         BitField("fragment_offset", 0, 13),         # Fragment offset
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 143),                 # Protocol number (customize as needed)
-        XShortField("checksum", 0),                 # Checksum
-        ShortField("seq_num", 0),                   # Sequence number
+        XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "192.168.163.1"),            # Source IP address
         IPField("dst", "192.168.89.128")            # Destination IP address
     ]
 
     def post_build(self, p, pay):
-        p += pay
+        # Calculate checksum if not provided
         if self.checksum == 0:
-            ck = checksum(p)
-            p = p[:10] + ck + p[12:]
-        return p
+            chksum = checksum(p)
+            p = p[:10] + chksum.to_bytes(2, byteorder='big') + p[12:]
+        return p + pay
 
 # Function to send custom packets
 def send_custom_ipv4_packet(target_ip, custom_header_params):
@@ -36,14 +35,13 @@ def send_custom_ipv4_packet(target_ip, custom_header_params):
 
 # Example usage
 if __name__ == "__main__":
-    target_ip = "192.168.89.128"  # Receiver's IP address
+    target_ip = "192.168.89.128"
 
     # Define custom header parameters
     custom_header_params = {
-        "protocol": 143,       
+        "protocol": 143,
         "src": "192.168.163.1",
-        "dst": target_ip,
-        "seq_num": 1  # Example sequence number
+        "dst": target_ip
     }
 
     # Send the custom IPv4 packet
