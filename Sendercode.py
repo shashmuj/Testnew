@@ -1,6 +1,6 @@
 from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, checksum
 
-# Define a custom header class
+# Define a custom header class for the sender
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [

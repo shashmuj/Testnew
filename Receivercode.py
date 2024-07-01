@@ -1,21 +1,20 @@
 from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum
 
-# Define a custom header class for the receiver
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
-        BitField("version", 4, 4),                  # IPv4 version
-        BitField("header_length", 5, 4),            # Header length (5 words)
-        ShortField("total_length", 40),             # Total length of IP header + payload
-        ShortField("identification", 1234),         # Identification number
-        BitField("flags", 0, 3),                    # Flags
-        BitField("fragment_offset", 0, 13),         # Fragment offset
-        ByteField("ttl", 64),                       # Time To Live (TTL)
-        ByteField("protocol", 143),                 # Protocol number (customize as needed)
-        XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        ShortField("seq_num", 0),                   # Sequence number
-        IPField("src", "192.168.163.1"),            # Source IP address
-        IPField("dst", "192.168.89.128")            # Destination IP address
+        BitField("version", 4, 4),
+        BitField("header_length", 5, 4),
+        ShortField("total_length", 40),
+        ShortField("identification", 1234),
+        BitField("flags", 0, 3),
+        BitField("fragment_offset", 0, 13),
+        ByteField("ttl", 64),
+        ByteField("protocol", 143),
+        XShortField("checksum", 0),
+        ShortField("seq_num", 0),
+        IPField("src", "192.168.163.1"),
+        IPField("dst", "192.168.89.128")
     ]
 
 # Function to verify the checksum
@@ -23,6 +22,7 @@ def verify_checksum(packet):
     original_checksum = packet[MyCustomHeader].checksum
     packet[MyCustomHeader].checksum = 0
     computed_checksum = checksum(bytes(packet[MyCustomHeader]))
+    packet[MyCustomHeader].checksum = original_checksum
     return original_checksum == computed_checksum
 
 # Function to handle incoming packets
@@ -36,7 +36,6 @@ def handle_packet(packet):
             print("Checksum is valid.")
         else:
             print("Checksum is invalid.")
-            return  # Skip processing if checksum is invalid
 
         # Create an acknowledgment packet
         ack_header = MyCustomHeader(
@@ -51,13 +50,14 @@ def handle_packet(packet):
         # Send the acknowledgment packet
         send(ack_packet)
         print(f"Sent acknowledgment packet: {ack_packet.summary()}")
+    else:
+        print("Received packet does not match MyCustomHeader")
 
 # Function to start sniffing
 def start_sniffing(interface="ens33"):
     print(f"Starting packet sniffing on interface: {interface}")
-    sniff(iface=interface, filter="ip", prn=handle_packet)
+    sniff(iface=interface, filter="ip", prn=handle_packet, store=0)
 
 if __name__ == "__main__":
-    # Ensure you have the correct network interface
-    interface = "ens33"  # Replace with the correct interface name if needed
+    interface = "ens33"
     start_sniffing(interface)
