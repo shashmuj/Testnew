@@ -35,7 +35,7 @@ def handle_packet(packet):
         if verify_checksum(packet):
             print("Checksum is valid.")
         else:
-            print("Checksum is invalid.")
+            print("Checksum is not valid.")
 
         # Create an acknowledgment packet
         ack_header = MyCustomHeader(
