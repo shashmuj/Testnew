@@ -1,69 +1,63 @@
-from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum, bind_layers
+from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum
 
 # Define a custom header class for the receiver
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
-        BitField("version", 4, 4),                  
-        BitField("header_length", 5, 4),            
-        ShortField("total_length", 40),             
-        ShortField("identification", 1234),         
-        BitField("flags", 0, 3),                    
-        BitField("fragment_offset", 0, 13),         
-        ByteField("ttl", 64),                       
-        ByteField("protocol", 143),                 
-        XShortField("checksum", 0),                 
-        ShortField("seq_num", 0),                   
-        ShortField("ack_num", 0),                   
-        IPField("src", "128.110.217.142"),           
-        IPField("dst", "128.110.217.34")             
+        BitField("version", 4, 4),                  # IPv4 version
+        BitField("header_length", 5, 4),            # Header length (5 words)
+        ShortField("total_length", 40),             # Total length of IP header + payload
+        ShortField("identification", 1234),         # Identification number
+        BitField("flags", 0, 3),                    # Flags
+        BitField("fragment_offset", 0, 13),         # Fragment offset
+        ByteField("ttl", 64),                       # Time To Live (TTL)
+        ByteField("protocol", 143),                 # Protocol number (customize as needed)
+        XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
+        ShortField("seq_num", 0),                   # Sequence number
+        IPField("src", "128.110.217.142"),          # Source IP address
+        IPField("dst", "128.110.217.34")            # Destination IP address
     ]
 
-# Register the custom header with Scapy
-bind_layers(IP, MyCustomHeader, proto=143)
+    def post_build(self, pkt, pay):
+        # Calculate checksum if not provided
+        if self.checksum == 0:
+            chksum = checksum(bytes(pkt))
+            self.checksum = chksum
+        return pkt + pay
 
-# Function to calculate checksum
-def calculate_checksum(packet):
-    return checksum(bytes(packet))
+# Function to validate checksum
+def validate_checksum(packet):
+    chksum = packet[MyCustomHeader].checksum
+    packet[MyCustomHeader].checksum = 0
+    computed_chksum = checksum(bytes(packet[MyCustomHeader]))
+    return chksum == computed_chksum
 
 # Function to handle incoming packets
 def handle_packet(packet):
-    if MyCustomHeader in packet:
+    if MyCustomHeader in packet and validate_checksum(packet):
         custom_header = packet[MyCustomHeader]
         print(f"Received packet: {custom_header.summary()}")
 
-        # Validate checksum
-        original_checksum = custom_header.checksum
-        custom_header.checksum = 0
-        calculated_checksum = calculate_checksum(custom_header)
-        if original_checksum == calculated_checksum:
-            print("Checksum is valid.")
-        else:
-            print(f"Checksum is invalid. Original: {original_checksum}, Calculated: {calculated_checksum}")
+        # Create an acknowledgment packet
+        ack_header = MyCustomHeader(
+            src=custom_header.dst,  # Swap src and dst for the response
+            dst=custom_header.src,
+            protocol=custom_header.protocol,
+            seq_num=custom_header.seq_num + 1  # Increment sequence number
+        )
+        ack_ip = IP(src=custom_header.dst, dst=custom_header.src)
+        ack_packet = ack_ip / ack_header
 
-        if custom_header.flags == 0b001:  # SYN received
-            print("Received SYN, sending SYN-ACK")
-            # Create SYN-ACK packet
-            syn_ack_header = MyCustomHeader(
-                src=custom_header.dst,
-                dst=custom_header.src,
-                seq_num=200,
-                ack_num=custom_header.seq_num + 1,
-                flags=0b010  # SYN-ACK
-            )
-            syn_ack_ip = IP(src=custom_header.dst, dst=custom_header.src)
-            syn_ack_packet = syn_ack_ip / syn_ack_header
-            send(syn_ack_packet)
-            print(f"Sent SYN-ACK packet: {syn_ack_packet.summary()}")
-
-        elif custom_header.flags == 0b001 and custom_header.ack_num != 0:  # ACK received
-            print("Received ACK, connection established")
+        # Send the acknowledgment packet
+        send(ack_packet)
+        print(f"Sent acknowledgment packet: {ack_packet.summary()}")
 
 # Function to start sniffing
 def start_sniffing(interface="eno1"):
     print(f"Starting packet sniffing on interface: {interface}")
-    sniff(iface=interface, prn=handle_packet)
+    sniff(iface=interface, filter="ip proto 143", prn=handle_packet)
 
 if __name__ == "__main__":
+    # Ensure you have the correct network interface
     interface = "eno1"  # Replace with the correct interface name if needed
     start_sniffing(interface)
