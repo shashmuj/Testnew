@@ -14,8 +14,8 @@ class MyCustomHeader(Packet):
         ByteField("protocol", 143),                 # Protocol number (customize as needed)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         ShortField("seq_num", 0),                   # Sequence number
-        IPField("src", "128.110.217.142"),          # Source IP address
-        IPField("dst", "128.110.217.34")            # Destination IP address
+        IPField("src", "128.110.217.106"),          # Source IP address
+        IPField("dst", " 128.110.217.79")            # Destination IP address
     ]
 
     def post_build(self, pkt, pay):
