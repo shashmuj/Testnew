@@ -28,13 +28,14 @@ class MyCustomHeader(Packet):
         return p + pay
 
 # Function to send custom packets
-def send_custom_ipv4_packet(target_ip, custom_header_params):
-    # Craft the IP packet with custom header
-    custom_header = MyCustomHeader(**custom_header_params)
-    ip_packet = IP(dst=target_ip) / custom_header
+def send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=10):
+    for _ in range(num_packets):
+        # Craft the IP packet with custom header
+        custom_header = MyCustomHeader(**custom_header_params)
+        ip_packet = IP(dst=target_ip) / custom_header
 
-    # Send the packet
-    send(ip_packet)
+        # Send the packet
+        send(ip_packet)
 
 # Example usage
 if __name__ == "__main__":
@@ -47,5 +48,5 @@ if __name__ == "__main__":
         "dst": target_ip
     }
 
-    # Send the custom IPv4 packet
-    send_custom_ipv4_packet(target_ip, custom_header_params)
+    # Send 10 custom IPv4 packets
+    send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=10)
