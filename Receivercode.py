@@ -15,7 +15,7 @@ class MyCustomHeader(Packet):
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         ShortField("seq_num", 0),                   # Sequence number
         IPField("src", "128.110.217.106"),          # Source IP address
-        IPField("dst", " 128.110.217.79")            # Destination IP address
+        IPField("dst", "128.110.217.79")            # Destination IP address (remove extra spaces)
     ]
 
     def post_build(self, pkt, pay):

@@ -15,7 +15,7 @@ class MyCustomHeader(Packet):
         ByteField("protocol", 143),                 # Protocol number (customize as needed)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "128.110.217.106"),          # Source IP address
-        IPField("dst", " 128.110.217.79")            # Destination IP address
+        IPField("dst", "128.110.217.79")            # Destination IP address (remove extra spaces)
     ]
 
     def post_build(self, p, pay):
@@ -38,7 +38,7 @@ def send_custom_ipv4_packet(target_ip, custom_header_params):
 
 # Example usage
 if __name__ == "__main__":
-    target_ip = " 128.110.217.79"
+    target_ip = "128.110.217.79"  # Corrected destination IP address
 
     # Define custom header parameters
     custom_header_params = {
