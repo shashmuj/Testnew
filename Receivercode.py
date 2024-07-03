@@ -1,5 +1,4 @@
-from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum, hexdump
-import struct
+from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum, bind_layers
 
 # Define a custom header class for the receiver
 class MyCustomHeader(Packet):
@@ -19,6 +18,9 @@ class MyCustomHeader(Packet):
         IPField("src", "128.110.217.142"),           
         IPField("dst", "128.110.217.34")             
     ]
+
+# Register the custom header with Scapy
+bind_layers(IP, MyCustomHeader, proto=143)
 
 # Function to calculate checksum
 def calculate_checksum(packet):
@@ -57,16 +59,11 @@ def handle_packet(packet):
         elif custom_header.flags == 0b001 and custom_header.ack_num != 0:  # ACK received
             print("Received ACK, connection established")
 
-        # Print detailed packet information
-        packet.show()
-        hexdump(packet)
-
 # Function to start sniffing
 def start_sniffing(interface="eno1"):
     print(f"Starting packet sniffing on interface: {interface}")
     sniff(iface=interface, prn=handle_packet)
 
 if __name__ == "__main__":
-    # Ensure you have the correct network interface
     interface = "eno1"  # Replace with the correct interface name if needed
     start_sniffing(interface)
