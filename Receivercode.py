@@ -14,7 +14,8 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       
         ByteField("protocol", 143),                 
         XShortField("checksum", 0),                 
-        ShortField("seq_num", 0),                  
+        ShortField("seq_num", 0),                   
+        ShortField("ack_num", 0),                   
         IPField("src", "128.110.217.142"),           
         IPField("dst", "128.110.217.34")             
     ]
@@ -38,28 +39,32 @@ def handle_packet(packet):
         else:
             print(f"Checksum is invalid. Original: {original_checksum}, Calculated: {calculated_checksum}")
 
+        if custom_header.flags == 0b001:  # SYN received
+            print("Received SYN, sending SYN-ACK")
+            # Create SYN-ACK packet
+            syn_ack_header = MyCustomHeader(
+                src=custom_header.dst,
+                dst=custom_header.src,
+                seq_num=200,
+                ack_num=custom_header.seq_num + 1,
+                flags=0b010  # SYN-ACK
+            )
+            syn_ack_ip = IP(src=custom_header.dst, dst=custom_header.src)
+            syn_ack_packet = syn_ack_ip / syn_ack_header
+            send(syn_ack_packet)
+            print(f"Sent SYN-ACK packet: {syn_ack_packet.summary()}")
+
+        elif custom_header.flags == 0b001 and custom_header.ack_num != 0:  # ACK received
+            print("Received ACK, connection established")
+
         # Print detailed packet information
         packet.show()
         hexdump(packet)
 
-        # Create an acknowledgment packet
-        ack_header = MyCustomHeader(
-            src=custom_header.dst,  # Swap src and dst for the response
-            dst=custom_header.src,
-            protocol=custom_header.protocol,
-            seq_num=custom_header.seq_num + 1  # Increment sequence number
-        )
-        ack_ip = IP(src=custom_header.dst, dst=custom_header.src)
-        ack_packet = ack_ip / ack_header
-
-        # Send the acknowledgment packet
-        send(ack_packet)
-        print(f"Sent acknowledgment packet: {ack_packet.summary()}\n" + "="*80 + "\n")
-
 # Function to start sniffing
 def start_sniffing(interface="eno1"):
     print(f"Starting packet sniffing on interface: {interface}")
-    sniff(iface=interface, filter="ip", prn=handle_packet)
+    sniff(iface=interface, prn=handle_packet)
 
 if __name__ == "__main__":
     # Ensure you have the correct network interface
