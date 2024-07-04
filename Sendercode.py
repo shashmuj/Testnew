@@ -12,17 +12,15 @@ class MyCustomHeader(Packet):
         BitField("flags", 0, 3),                    # Flags
         BitField("fragment_offset", 0, 13),         # Fragment offset
         ByteField("ttl", 64),                       # Time To Live (TTL)
-        ByteField("protocol",143),                 # Protocol number (customize as needed)
+        ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "128.110.217.163"),          # Source IP address
-        IPField("dst", "128.110.217.192")            # Destination IP address (remove extra spaces)
+        IPField("dst", "128.110.217.192")           # Destination IP address
     ]
 
     def post_build(self, p, pay):
-        # Calculate checksum if not provided
         if self.checksum == 0:
             chksum = checksum(p)
-            # Convert the checksum to bytes using struct.pack for Python 2.7 compatibility
             chksum_bytes = struct.pack('!H', chksum)
             p = p[:10] + chksum_bytes + p[12:]
         return p + pay
@@ -30,24 +28,16 @@ class MyCustomHeader(Packet):
 # Function to send custom packets
 def send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=10):
     for _ in range(num_packets):
-        # Craft the IP packet with custom header
         custom_header = MyCustomHeader(**custom_header_params)
-        ip_packet = IP(dst=target_ip) / custom_header
-
-        # Send the packet
+        ip_packet = IP(dst=target_ip, proto=253) / custom_header
         send(ip_packet)
 
 # Example usage
 if __name__ == "__main__":
-    target_ip = "128.110.217.192"  # Corrected destination IP address
-
-    # Define custom header parameters
+    target_ip = "128.110.217.192"
     custom_header_params = {
-        "protocol":143,
+        "protocol": 253,  # Using protocol number 253 for experimentation
         "src": "128.110.217.163",
         "dst": target_ip
     }
-
-    # Send 10 custom IPv4 packets
     send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=10)
-
