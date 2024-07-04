@@ -1,6 +1,9 @@
-from scapy.all import sniff, send, Packet, BitField, ShortField, ByteField, IPField, IP, XShortField, checksum
+from scapy.all import sniff, IP, send, Raw
+from scapy.packet import Packet
+from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, checksum
+import struct
 
-# Define a custom header class for the receiver
+# Define the custom header class for the receiver
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
@@ -11,53 +14,47 @@ class MyCustomHeader(Packet):
         BitField("flags", 0, 3),                    # Flags
         BitField("fragment_offset", 0, 13),         # Fragment offset
         ByteField("ttl", 64),                       # Time To Live (TTL)
-        ByteField("protocol", 253),                 # Protocol number (customize as needed)
+        ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        ShortField("seq_num", 0),                   # Sequence number
         IPField("src", "128.110.217.163"),          # Source IP address
-        IPField("dst", "128.110.217.192")            # Destination IP address (remove extra spaces)
+        IPField("dst", "128.110.217.192")           # Destination IP address
     ]
 
-    def post_build(self, pkt, pay):
-        # Calculate checksum if not provided
+    def post_build(self, p, pay):
         if self.checksum == 0:
-            chksum = checksum(bytes(pkt))
-            self.checksum = chksum
-        return pkt + pay
+            chksum = checksum(p)
+            chksum_bytes = struct.pack('!H', chksum)
+            p = p[:10] + chksum_bytes + p[12:]
+        return p + pay
 
-# Function to validate checksum
-def validate_checksum(packet):
-    chksum = packet[MyCustomHeader].checksum
-    packet[MyCustomHeader].checksum = 0
-    computed_chksum = checksum(bytes(packet[MyCustomHeader]))
-    return chksum == computed_chksum
+def verify_checksum(packet):
+    """Verify the checksum of the custom header."""
+    header = bytes(packet[MyCustomHeader])
+    calc_checksum = checksum(header)
+    return calc_checksum == 0
 
-# Function to handle incoming packets
 def handle_packet(packet):
-    if MyCustomHeader in packet and validate_checksum(packet):
+    """Handle incoming packets."""
+    if MyCustomHeader in packet:
         custom_header = packet[MyCustomHeader]
-        print(f"Received packet: {custom_header.summary()}")
+        print(f"Received packet from {custom_header.src} to {custom_header.dst}")
+        
+        # Verify checksum
+        if verify_checksum(packet):
+            print("Checksum is valid")
+            
+            # Send a response back to the sender
+            response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
+            send(response)
+        else:
+            print("Checksum is invalid")
+    else:
+        print("Received packet does not match custom protocol")
 
-        # Create an acknowledgment packet
-        ack_header = MyCustomHeader(
-            src=custom_header.dst,  # Swap src and dst for the response
-            dst=custom_header.src,
-            protocol=custom_header.protocol,
-            seq_num=custom_header.seq_num + 1  # Increment sequence number
-        )
-        ack_ip = IP(src=custom_header.dst, dst=custom_header.src)
-        ack_packet = ack_ip / ack_header
-
-        # Send the acknowledgment packet
-        send(ack_packet)
-        print(f"Sent acknowledgment packet: {ack_packet.summary()}")
-
-# Function to start sniffing
-def start_sniffing(interface="eno1"):
-    print(f"Starting packet sniffing on interface: {interface}")
-    sniff(iface=interface, filter="ip proto 253", prn=handle_packet)
+def main():
+    """Main function to start packet sniffing."""
+    print("Starting packet sniffing...")
+    sniff(filter="ip proto 253", prn=handle_packet)
 
 if __name__ == "__main__":
-    # Ensure you have the correct network interface
-    interface = "eno1"  # Replace with the correct interface name if needed
-    start_sniffing(interface)
+    main()
