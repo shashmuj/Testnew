@@ -16,10 +16,9 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        IPField("src", "128.110.217.80"),          # Source IP address
-        IPField("dst", "128.110.217.83")    
-         ]       # Destination IP address
-
+        IPField("src", "128.110.217.80"),           # Source IP address
+        IPField("dst", "128.110.217.83")            # Destination IP address
+    ]
 
     def post_build(self, p, pay):
         if self.checksum == 0:
@@ -28,34 +27,31 @@ class MyCustomHeader(Packet):
             p = p[:10] + chksum_bytes + p[12:]
         return p + pay
 
-def verify_checksum(packet):
-    """Verify the checksum of the custom header."""
-    header = bytes(packet[MyCustomHeader])
-    calc_checksum = checksum(header)
-    return calc_checksum == 0
-
 def handle_packet(packet):
     """Handle incoming packets."""
     if MyCustomHeader in packet:
         custom_header = packet[MyCustomHeader]
         print(f"Received packet from {custom_header.src} to {custom_header.dst}")
+        print(f"Version: {custom_header.version}")
+        print(f"Header Length: {custom_header.header_length}")
+        print(f"Total Length: {custom_header.total_length}")
+        print(f"Identification: {custom_header.identification}")
+        print(f"Flags: {custom_header.flags}")
+        print(f"Fragment Offset: {custom_header.fragment_offset}")
+        print(f"TTL: {custom_header.ttl}")
+        print(f"Protocol: {custom_header.protocol}")
+        print(f"Checksum: {custom_header.checksum}")
         
-        # Verify checksum
-        if verify_checksum(packet):
-            print("Checksum is valid")
-            
-            # Send a response back to the sender
-            response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
-            send(response)
-        else:
-            print("Checksum is invalid")
+        # Send a response back to the sender
+        response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
+        send(response)
     else:
         print("Received packet does not match custom protocol")
 
 def main():
     """Main function to start packet sniffing."""
     print("Starting packet sniffing...")
-    sniff(filter="ip proto 253",iface="eno1",prn=handle_packet)
+    sniff(filter="ip proto 253", iface="eno1", prn=handle_packet)
 
 if __name__ == "__main__":
     main()
