@@ -11,7 +11,7 @@ class MyCustomHeader(Packet):
         BitField("flags", 0, 3),                    # Flags
         BitField("fragment_offset", 0, 13),         # Fragment offset
         ByteField("ttl", 64),                       # Time To Live (TTL)
-        ByteField("protocol", 143),                 # Protocol number (customize as needed)
+        ByteField("protocol", 253),                 # Protocol number (customize as needed)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         ShortField("seq_num", 0),                   # Sequence number
         IPField("src", "128.110.217.163"),          # Source IP address
@@ -55,7 +55,7 @@ def handle_packet(packet):
 # Function to start sniffing
 def start_sniffing(interface="eno1"):
     print(f"Starting packet sniffing on interface: {interface}")
-    sniff(iface=interface, filter="ip proto 143", prn=handle_packet)
+    sniff(iface=interface, filter="ip proto 253", prn=handle_packet)
 
 if __name__ == "__main__":
     # Ensure you have the correct network interface

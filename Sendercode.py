@@ -12,7 +12,7 @@ class MyCustomHeader(Packet):
         BitField("flags", 0, 3),                    # Flags
         BitField("fragment_offset", 0, 13),         # Fragment offset
         ByteField("ttl", 64),                       # Time To Live (TTL)
-        ByteField("protocol", 143),                 # Protocol number (customize as needed)
+        ByteField("protocol",253),                 # Protocol number (customize as needed)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "128.110.217.163"),          # Source IP address
         IPField("dst", "128.110.217.192")            # Destination IP address (remove extra spaces)
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # Define custom header parameters
     custom_header_params = {
-        "protocol": 143,
+        "protocol":253,
         "src": "128.110.217.163",
         "dst": target_ip
     }
