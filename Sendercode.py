@@ -1,5 +1,4 @@
-from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, checksum
-import struct
+from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField
 
 # Define a custom header class for the sender
 class MyCustomHeader(Packet):
@@ -17,13 +16,6 @@ class MyCustomHeader(Packet):
         IPField("src", "128.110.217.129"),          # Source IP address
         IPField("dst", "128.110.217.149")           # Destination IP address
     ]
-
-    def post_build(self, p, pay):
-        if self.checksum == 0:
-            chksum = checksum(p)
-            chksum_bytes = struct.pack('!H', chksum)
-            p = p[:10] + chksum_bytes + p[12:]
-        return p + pay
 
 # Function to send custom packets
 def send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=10):

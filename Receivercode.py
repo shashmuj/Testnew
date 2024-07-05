@@ -1,9 +1,6 @@
 from scapy.all import sniff, IP, Raw, send
-from scapy.packet import Packet
-from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField
-import struct
 
-# Define the custom header class for the receiver
+# Define a custom header class for the receiver (same as the sender)
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
@@ -20,20 +17,13 @@ class MyCustomHeader(Packet):
         IPField("dst", "128.110.217.149")           # Destination IP address
     ]
 
-    def post_build(self, p, pay):
-        if self.checksum == 0:
-            chksum = checksum(p)
-            chksum_bytes = struct.pack('!H', chksum)
-            p = p[:10] + chksum_bytes + p[12:]
-        return p + pay
-
 def handle_packet(packet):
     """Handle incoming packets."""
     if packet.haslayer(IP):
         ip_layer = packet[IP]
         if ip_layer.src == "128.110.217.129" and ip_layer.dst == "128.110.217.149" and ip_layer.proto == 253:
             print(f"Received packet from {ip_layer.src} to {ip_layer.dst}")
-
+            
             # Extract and parse custom header from the payload
             if packet.haslayer(Raw):
                 custom_header = MyCustomHeader(packet[Raw].load)
@@ -47,19 +37,21 @@ def handle_packet(packet):
                 print(f"  TTL: {custom_header.ttl}")
                 print(f"  Protocol: {custom_header.protocol}")
                 print(f"  Checksum: {custom_header.checksum}")
-                
+
                 # Send a response back to the sender
                 response = IP(src=ip_layer.dst, dst=ip_layer.src) / Raw(load="Packet received")
                 send(response)
             else:
                 print("Received packet does not contain Raw layer")
         else:
-            print(f"Received non-custom protocol packet from {ip_layer.src} to {ip_layer.dst}")
+            # Ignore non-custom protocol packets
+            pass
 
 def main():
     """Main function to start packet sniffing."""
     print("Starting packet sniffing...")
-    sniff(iface="eno1", prn=handle_packet)  # Capture all packets on the specified interface
+    # Capture only packets from sender to receiver with custom protocol
+    sniff(iface="eno1", prn=handle_packet)
 
 if __name__ == "__main__":
     main()
