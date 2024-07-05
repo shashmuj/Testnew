@@ -17,7 +17,7 @@ class MyCustomHeader(Packet):
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "128.110.217.129"),           # Source IP address
-        IPField("dst", "127.0.0.1")            # Destination IP address
+        IPField("dst", "128.110.217.149")            # Destination IP address
     ]
 
     def post_build(self, p, pay):
@@ -51,7 +51,7 @@ def handle_packet(packet):
 def main():
     """Main function to start packet sniffing."""
     print("Starting packet sniffing...")
-    sniff(filter="ip proto 253", iface="lo", prn=handle_packet)
+    sniff(filter="ip proto 253", iface="eno1", prn=handle_packet)
 
 if __name__ == "__main__":
     main()
