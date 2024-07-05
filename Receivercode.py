@@ -29,29 +29,39 @@ class MyCustomHeader(Packet):
 
 def handle_packet(packet):
     """Handle incoming packets."""
-    if MyCustomHeader in packet:
-        custom_header = packet[MyCustomHeader]
-        print(f"Received packet from {custom_header.src} to {custom_header.dst}")
-        print(f"Version: {custom_header.version}")
-        print(f"Header Length: {custom_header.header_length}")
-        print(f"Total Length: {custom_header.total_length}")
-        print(f"Identification: {custom_header.identification}")
-        print(f"Flags: {custom_header.flags}")
-        print(f"Fragment Offset: {custom_header.fragment_offset}")
-        print(f"TTL: {custom_header.ttl}")
-        print(f"Protocol: {custom_header.protocol}")
-        print(f"Checksum: {custom_header.checksum}")
-        
-        # Send a response back to the sender
-        response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
-        send(response)
+    if packet.haslayer(IP):
+        ip_layer = packet[IP]
+        if ip_layer.proto == 253:  # Check for the custom protocol
+            print(f"Received packet from {ip_layer.src} to {ip_layer.dst}")
+
+            # Extract and parse custom header from the payload
+            if packet.haslayer(Raw):
+                custom_header = MyCustomHeader(packet[Raw].load)
+                print(f"Custom Header Info:")
+                print(f"  Version: {custom_header.version}")
+                print(f"  Header Length: {custom_header.header_length}")
+                print(f"  Total Length: {custom_header.total_length}")
+                print(f"  Identification: {custom_header.identification}")
+                print(f"  Flags: {custom_header.flags}")
+                print(f"  Fragment Offset: {custom_header.fragment_offset}")
+                print(f"  TTL: {custom_header.ttl}")
+                print(f"  Protocol: {custom_header.protocol}")
+                print(f"  Checksum: {custom_header.checksum}")
+                
+                # Send a response back to the sender
+                response = IP(src=ip_layer.dst, dst=ip_layer.src) / Raw(load="Packet received")
+                send(response)
+            else:
+                print("Received packet does not contain Raw layer")
+        else:
+            print(f"Received non-custom protocol packet from {ip_layer.src} to {ip_layer.dst}")
     else:
-        print("Received packet does not match custom protocol")
+        print("Received non-IP packet")
 
 def main():
     """Main function to start packet sniffing."""
     print("Starting packet sniffing...")
-    sniff(filter="ip proto 253", iface="eno1", prn=handle_packet)
+    sniff(iface="eno1", prn=handle_packet)  # Capture all packets on the specified interface
 
 if __name__ == "__main__":
     main()
