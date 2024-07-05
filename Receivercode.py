@@ -1,4 +1,4 @@
-from scapy.all import sniff, IP, send, Raw
+from scapy.all import sniff, IP, Raw, send
 from scapy.packet import Packet
 from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, checksum
 import struct
@@ -16,8 +16,8 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        IPField("src", "128.110.217.129"),           # Source IP address
-        IPField("dst", "128.110.217.149")            # Destination IP address
+        IPField("src", "128.110.217.129"),          # Source IP address
+        IPField("dst", "128.110.217.149")           # Destination IP address
     ]
 
     def post_build(self, p, pay):
@@ -37,7 +37,7 @@ def handle_packet(packet):
             # Extract and parse custom header from the payload
             if packet.haslayer(Raw):
                 custom_header = MyCustomHeader(packet[Raw].load)
-                print(f"Custom Header Info:")
+                print("Custom Header Info:")
                 print(f"  Version: {custom_header.version}")
                 print(f"  Header Length: {custom_header.header_length}")
                 print(f"  Total Length: {custom_header.total_length}")
