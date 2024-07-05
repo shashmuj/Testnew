@@ -1,6 +1,6 @@
 from scapy.all import sniff, IP, Raw, send
 from scapy.packet import Packet
-from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, checksum
+from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField
 import struct
 
 # Define the custom header class for the receiver
@@ -31,7 +31,7 @@ def handle_packet(packet):
     """Handle incoming packets."""
     if packet.haslayer(IP):
         ip_layer = packet[IP]
-        if ip_layer.proto == 253:  # Check for the custom protocol
+        if ip_layer.src == "128.110.217.129" and ip_layer.dst == "128.110.217.149" and ip_layer.proto == 253:
             print(f"Received packet from {ip_layer.src} to {ip_layer.dst}")
 
             # Extract and parse custom header from the payload
@@ -55,8 +55,6 @@ def handle_packet(packet):
                 print("Received packet does not contain Raw layer")
         else:
             print(f"Received non-custom protocol packet from {ip_layer.src} to {ip_layer.dst}")
-    else:
-        print("Received non-IP packet")
 
 def main():
     """Main function to start packet sniffing."""
