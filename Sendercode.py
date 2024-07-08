@@ -1,4 +1,5 @@
-from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField
+from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField
+import struct
 
 # Define a custom header class for the sender
 class MyCustomHeader(Packet):
@@ -14,8 +15,7 @@ class MyCustomHeader(Packet):
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "128.110.217.197"),          # Source IP address
-        IPField("dst", "128.110.217.203"),          # Destination IP address
-        IntField("seq_num", 0)                      # Sequence number
+        IPField("dst", "128.110.217.203")           # Destination IP address
     ]
 
     def post_build(self, p, pay):
@@ -26,19 +26,16 @@ class MyCustomHeader(Packet):
         return p + pay
 
 # Function to send custom packets
-def send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=1):
-    for i in range(num_packets):
-        custom_header = MyCustomHeader(seq_num=i, **custom_header_params)
-        ip_packet = IP(dst=target_ip, proto=253) / custom_header
-        
-        # Print packet details
-        print("Sending packet:")
-        print(ip_packet.show())
-        print("Raw bytes:")
-        print(raw(ip_packet))  # Use raw function here to get the raw bytes
-        
-        # Send the packet
-        send(ip_packet)
+def send_custom_ipv4_packet(target_ip, custom_header_params):
+    custom_header = MyCustomHeader(**custom_header_params)
+    ip_packet = IP(dst=target_ip, proto=253) / custom_header
+    
+    # Print detailed packet information before sending
+    print("Sending packet:")
+    print(ip_packet.show())
+
+    # Send the packet
+    send(ip_packet)
 
 # Example usage
 if __name__ == "__main__":
@@ -48,4 +45,4 @@ if __name__ == "__main__":
         "src": "128.110.217.197",
         "dst": target_ip
     }
-    send_custom_ipv4_packets(target_ip, custom_header_params)
+    send_custom_ipv4_packet(target_ip, custom_header_params)
