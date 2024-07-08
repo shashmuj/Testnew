@@ -1,6 +1,5 @@
-from scapy.all import sniff, IP, Raw, Packet,send
-from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, IntField
-
+from scapy.all import sniff, IP, Raw, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, checksum
+import struct
 
 # Define the custom header class for the receiver
 class MyCustomHeader(Packet):
@@ -20,12 +19,11 @@ class MyCustomHeader(Packet):
         IntField("seq_num", 0)                      # Sequence number
     ]
 
-    def post_build(self, p, pay):
-        if self.checksum == 0:
-            chksum = checksum(p)
-            chksum_bytes = struct.pack('!H', chksum)
-            p = p[:10] + chksum_bytes + p[12:]
-        return p + pay
+def verify_checksum(packet):
+    """Verify the checksum of the custom header."""
+    header = bytes(packet[MyCustomHeader])
+    calc_checksum = checksum(header)
+    return calc_checksum == 0
 
 def handle_packet(packet):
     if MyCustomHeader in packet:
@@ -44,9 +42,15 @@ def handle_packet(packet):
         print(f"  Source IP: {custom_header.src}")
         print(f"  Destination IP: {custom_header.dst}")
         
-        # Send a response back to the sender
-        response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
-        send(response)
+        # Verify checksum
+        if verify_checksum(packet):
+            print("Checksum is valid")
+            
+            # Send a response back to the sender
+            response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
+            send(response)
+        else:
+            print("Checksum is invalid")
     else:
         print("Received packet does not match custom protocol")
 
