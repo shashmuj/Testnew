@@ -1,6 +1,6 @@
-from scapy.all import sniff, IP, send, Raw, Packet
-from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, checksum
-import struct
+from scapy.all import sniff, IP, Raw, Packet,send
+from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, IntField
+
 
 # Define the custom header class for the receiver
 class MyCustomHeader(Packet):
@@ -16,7 +16,8 @@ class MyCustomHeader(Packet):
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
         IPField("src", "128.110.217.197"),          # Source IP address
-        IPField("dst", "128.110.217.203")           # Destination IP address
+        IPField("dst", "128.110.217.203"),          # Destination IP address
+        IntField("seq_num", 0)                      # Sequence number
     ]
 
     def post_build(self, p, pay):
@@ -27,10 +28,21 @@ class MyCustomHeader(Packet):
         return p + pay
 
 def handle_packet(packet):
-    """Handle incoming packets."""
     if MyCustomHeader in packet:
         custom_header = packet[MyCustomHeader]
         print(f"Received packet from {custom_header.src} to {custom_header.dst}")
+        print(f"  Version: {custom_header.version}")
+        print(f"  Header Length: {custom_header.header_length}")
+        print(f"  Total Length: {custom_header.total_length}")
+        print(f"  Identification: {custom_header.identification}")
+        print(f"  Flags: {custom_header.flags}")
+        print(f"  Fragment Offset: {custom_header.fragment_offset}")
+        print(f"  TTL: {custom_header.ttl}")
+        print(f"  Protocol: {custom_header.protocol}")
+        print(f"  Checksum: {custom_header.checksum}")
+        print(f"  Sequence Number: {custom_header.seq_num}")
+        print(f"  Source IP: {custom_header.src}")
+        print(f"  Destination IP: {custom_header.dst}")
         
         # Send a response back to the sender
         response = IP(src=custom_header.dst, dst=custom_header.src) / Raw(load="Packet received")
@@ -39,7 +51,6 @@ def handle_packet(packet):
         print("Received packet does not match custom protocol")
 
 def main():
-    """Main function to start packet sniffing."""
     print("Starting packet sniffing...")
     sniff(filter="ip proto 253", iface="eno1", prn=handle_packet)
 
