@@ -31,6 +31,7 @@ def send_custom_ipv4_packet(target_ip, custom_header_params):
     custom_header = MyCustomHeader(**custom_header_params)
     ip_packet = IP(dst=target_ip, proto=253) / custom_header
     print(custom_header.show())
+    print(repr(ip_packet))
     send(ip_packet)
 
 # Example usage
