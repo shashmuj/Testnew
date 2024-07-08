@@ -1,5 +1,4 @@
-from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, raw
-import struct
+from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField
 
 # Define a custom header class for the sender
 class MyCustomHeader(Packet):
@@ -27,18 +26,19 @@ class MyCustomHeader(Packet):
         return p + pay
 
 # Function to send custom packets
-def send_custom_ipv4_packets(target_ip, custom_header_params):
-    custom_header = MyCustomHeader(**custom_header_params)
-    ip_packet = IP(dst=target_ip, proto=253) / custom_header
-
-    # Print packet details
-    print("Sending packet:")
-    print(repr(ip_packet))
-    print("Raw packet bytes:")
-    print(raw(ip_packet).hex())
-
-    # Send the packet
-    send(ip_packet)
+def send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=1):
+    for i in range(num_packets):
+        custom_header = MyCustomHeader(seq_num=i, **custom_header_params)
+        ip_packet = IP(dst=target_ip, proto=253) / custom_header
+        
+        # Print packet details
+        print("Sending packet:")
+        print(ip_packet.show())
+        print("Raw bytes:")
+        print(raw(ip_packet))  # Use raw function here to get the raw bytes
+        
+        # Send the packet
+        send(ip_packet)
 
 # Example usage
 if __name__ == "__main__":
@@ -46,7 +46,6 @@ if __name__ == "__main__":
     custom_header_params = {
         "protocol": 253,  # Using protocol number 253 for experimentation
         "src": "128.110.217.197",
-        "dst": target_ip,
-        "seq_num": 1
+        "dst": target_ip
     }
     send_custom_ipv4_packets(target_ip, custom_header_params)
