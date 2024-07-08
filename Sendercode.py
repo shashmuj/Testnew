@@ -32,4 +32,4 @@ if __name__ == "__main__":
         "src": "128.110.217.197",
         "dst": target_ip
     }
-    send_custom_ipv4_packets(target_ip, custom_header_params, num_packets=10)
+    send_custom_ipv4_packets(target_ip, custom_header_params)
