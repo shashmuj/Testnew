@@ -29,6 +29,7 @@ class MyCustomHeader(Packet):
 def handle_packet(packet):
     """Handle incoming packets."""
     print("=== Received Packet ===")
+    packet.show()
     if IP in packet:
         ip_header = packet[IP]
         print(f"Source IP: {ip_header.src}")
