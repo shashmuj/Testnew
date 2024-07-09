@@ -14,7 +14,7 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        IPField("src", "81.5.166.131"),          # Source IP address
+        IPField("src", "85.255.235.124"),          # Source IP address
         IPField("dst", "128.110.217.170"),          # Destination IP address
         IntField("seq_num", 1)                      # Sequence number
     ]
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     target_ip = "128.110.217.170"
     custom_header_params = {
         "protocol": 253,  # Using protocol number 253 for experimentation
-        "src": "81.5.166.131",
+        "src": "85.255.235.124",
         "dst": target_ip,
         "seq_num": 1  # Starting sequence number
     }
