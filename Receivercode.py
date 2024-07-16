@@ -15,8 +15,8 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        IPField("src", "212.187.244.53"),          # Source IP address
-        IPField("dst", "128.110.217.175")           # Destination IP address
+        IPField("src", "149.86.84.246"),          # Source IP address
+        IPField("dst", "128.110.217.195")           # Destination IP address
     ]
 
     def post_build(self, p, pay):
@@ -72,7 +72,7 @@ def handle_packet(packet):
 def main():
     """Main function to start packet sniffing."""
     print("Starting packet sniffing...")
-    sniff(filter="ip and src host 212.187.244.53", iface="eno1", prn=handle_packet)
+    sniff(filter="ip and src host 149.86.84.246", iface="eno1", prn=handle_packet)
 
 if __name__ == "__main__":
     main()

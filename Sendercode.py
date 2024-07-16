@@ -14,8 +14,8 @@ class MyCustomHeader(Packet):
         ByteField("ttl", 64),                       # Time To Live (TTL)
         ByteField("protocol", 253),                 # Protocol number (custom protocol number)
         XShortField("checksum", 0),                 # Checksum (initially set to 0, will be calculated later)
-        IPField("src", "212.187.244.53"),          # Source IP address
-        IPField("dst", "128.110.217.175"),          # Destination IP address
+        IPField("src", "149.86.84.246"),          # Source IP address
+        IPField("dst", "128.110.217.195"),          # Destination IP address
         IntField("seq_num", 1)                      # Sequence number
     ]
 
@@ -36,10 +36,10 @@ def send_custom_ipv4_packet(target_ip, custom_header_params):
 
 # Example usage
 if __name__ == "__main__":
-    target_ip = "128.110.217.175"
+    target_ip = "128.110.217.195"
     custom_header_params = {
         "protocol": 253,  # Using protocol number 253 for experimentation
-        "src": "212.187.244.53",
+        "src": "149.86.84.246",
         "dst": target_ip,
         "seq_num": 1  # Starting sequence number
     }
