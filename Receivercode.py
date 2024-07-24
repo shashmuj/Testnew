@@ -50,12 +50,39 @@ def handle_packet(packet, sender_ip):
         else:
             print("Received a packet with no custom header.")
 
+        # Prepare and send a response packet
         response = IP(src=ip_header.dst, dst=ip_header.src) / Raw(load="Packet received")
         print("=== Sending Response Packet ===")
         response.show()
         send(response)
+
+        # Optionally, listen for the response packet here
+        print("Listening for response from sender...")
+        sniff(iface=args.iface, filter=f"ip src {ip_header.src}", count=1, prn=lambda p: handle_response(p, ip_header.src))
     else:
-        print(f"Ignored packet from {ip_header.src} if it is not from the sender {sender_ip}")
+        print(f"Ignored packet from {ip_header.src} as it is not from the sender {sender_ip}")
+
+def handle_response(packet, sender_ip):
+    ip_header = packet.getlayer(IP)
+    if ip_header and ip_header.src == sender_ip:
+        print("=== Received Response Packet ===")
+        packet.show()
+        ip_header = packet.getlayer(IP)
+        if ip_header:
+            print("=== IP Header of Response ===")
+            print(f"Source IP: {ip_header.src}")
+            print(f"Destination IP: {ip_header.dst}")
+            print(f"Protocol: {ip_header.proto}")
+            print(f"Version: {ip_header.version}")
+            print(f"IHL: {ip_header.ihl}")
+            print(f"TOS: {ip_header.tos}")
+            print(f"Total Length: {ip_header.len}")
+            print(f"Identification: {ip_header.id}")
+            print(f"Flags: {ip_header.flags}")
+            print(f"Fragment Offset: {ip_header.frag}")
+            print(f"TTL: {ip_header.ttl}")
+            print(f"Checksum: {hex(ip_header.chksum)}")
+            print(f"Options: {ip_header.options}")
 
 def main():
     parser = argparse.ArgumentParser(description="Receive and respond to custom IPv4 packets")
@@ -64,8 +91,11 @@ def main():
 
     args = parser.parse_args()
 
+    # Construct the filter to only capture packets from the sender IP
+    filter_str = f"ip src {args.sender_ip}"
+
     print("Starting packet sniffing...")
-    sniff(iface=args.iface, prn=lambda packet: handle_packet(packet, args.sender_ip))
+    sniff(iface=args.iface, filter=filter_str, prn=lambda packet: handle_packet(packet, args.sender_ip))
 
 if __name__ == "__main__":
     main()
