@@ -35,13 +35,12 @@ def send_custom_ipv4_packet(custom_header_params):
     print(repr(ip_packet))
     send(ip_packet, count=1)
 
-def handle_response(packet, sender_ip):
-    if IP in packet and packet[IP].src == sender_ip:
-        print("=== Received Response Packet ===")
-        packet.show()
-        
-        ip_header = packet.getlayer(IP)
-        if ip_header:
+def handle_response(packet, expected_src_ip):
+    if IP in packet:
+        ip_header = packet[IP]
+        if ip_header.src == expected_src_ip:
+            print("=== Received Response Packet ===")
+            packet.show()
             print("=== IP Header of Response ===")
             print(f"Source IP: {ip_header.src}")
             print(f"Destination IP: {ip_header.dst}")
@@ -85,7 +84,8 @@ def main():
     send_custom_ipv4_packet(custom_header_params)
 
     print("Listening for responses from the receiver...")
-    sniff(filter=f"ip and src host {args.dst_ip}", iface=args.iface, prn=lambda p: handle_response(p, args.dst_ip))
+    # Use a more general filter to capture all IP packets from the receiver IP
+    sniff(filter=f"ip src {args.dst_ip}", iface=args.iface, prn=lambda p: handle_response(p, args.src_ip))
 
 if __name__ == "__main__":
     main()
