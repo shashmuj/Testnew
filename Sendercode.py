@@ -34,7 +34,7 @@ def send_custom_ipv4_packet(custom_header_params):
     print("=== Sending Custom Packet ===")
     custom_header.show()
     print(repr(ip_packet))
-    send(ip_packet)
+    send(ip_packet,count=1)
 
 def handle_response(packet, receiver_ip):
     if IP in packet and packet[IP].src == receiver_ip:
