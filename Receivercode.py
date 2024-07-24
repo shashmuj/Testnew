@@ -4,7 +4,6 @@ import struct
 import argparse
 import sys
 
-# Define the custom header class for the receiver
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
@@ -56,26 +55,5 @@ def handle_packet(packet, sender_ip):
         print("=== Sending Response Packet ===")
         response.show()
         send(response)
+        print(f"Response sent from {response.src} to {response.dst}")
 
-    else:
-        print(f"Ignored packet from {ip_header.src} as it is not from the sender {sender_ip}")
-
-def main():
-    parser = argparse.ArgumentParser(description="Receive and respond to custom IPv4 packets")
-    parser.add_argument("--iface", required=True, help="Network interface to sniff on")
-    parser.add_argument("--sender_ip", required=True, help="Sender IP address")
-
-    args = parser.parse_args()
-
-    # Construct the filter to only capture packets from the sender IP
-    filter_str = f"ip src {args.sender_ip}"
-
-    try:
-        print("Starting packet sniffing...")
-        sniff(iface=args.iface, filter=filter_str, prn=lambda packet: handle_packet(packet, args.sender_ip))
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
