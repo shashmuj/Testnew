@@ -36,25 +36,27 @@ def send_custom_ipv4_packet(custom_header_params):
     send(ip_packet, count=1)
 
 def handle_response(packet, expected_src_ip):
-    # You may need to update this based on specific criteria for response packets
+    # Ensure IP layer is present
     if IP in packet:
         ip_header = packet[IP]
-        print("=== Received Packet ===")
-        packet.show()
-        print("=== IP Header of Packet ===")
-        print(f"Source IP: {ip_header.src}")
-        print(f"Destination IP: {ip_header.dst}")
-        print(f"Protocol: {ip_header.proto}")
-        print(f"Version: {ip_header.version}")
-        print(f"IHL: {ip_header.ihl}")
-        print(f"TOS: {ip_header.tos}")
-        print(f"Total Length: {ip_header.len}")
-        print(f"Identification: {ip_header.id}")
-        print(f"Flags: {ip_header.flags}")
-        print(f"Fragment Offset: {ip_header.frag}")
-        print(f"TTL: {ip_header.ttl}")
-        print(f"Checksum: {hex(ip_header.chksum)}")
-        print(f"Options: {ip_header.options}")
+        # Check if the packet's source IP matches the expected source IP
+        if ip_header.src == expected_src_ip:
+            print("=== Received Response Packet ===")
+            packet.show()
+            print("=== IP Header of Packet ===")
+            print(f"Source IP: {ip_header.src}")
+            print(f"Destination IP: {ip_header.dst}")
+            print(f"Protocol: {ip_header.proto}")
+            print(f"Version: {ip_header.version}")
+            print(f"IHL: {ip_header.ihl}")
+            print(f"TOS: {ip_header.tos}")
+            print(f"Total Length: {ip_header.len}")
+            print(f"Identification: {ip_header.id}")
+            print(f"Flags: {ip_header.flags}")
+            print(f"Fragment Offset: {ip_header.frag}")
+            print(f"TTL: {ip_header.ttl}")
+            print(f"Checksum: {hex(ip_header.chksum)}")
+            print(f"Options: {ip_header.options}")
 
 def main():
     parser = argparse.ArgumentParser(description="Send and receive custom IPv4 packets")
@@ -84,8 +86,9 @@ def main():
     send_custom_ipv4_packet(custom_header_params)
 
     print("Listening for responses from the receiver...")
-    # Capture all IP packets on the interface
-    sniff(iface=args.iface, prn=lambda p: handle_response(p, args.src_ip))
+    # Capture packets with a filter for the response
+    filter_str = f"ip src {args.dst_ip} and ip dst {args.src_ip}"
+    sniff(iface=args.iface, filter=filter_str, prn=lambda p: handle_response(p, args.dst_ip))
 
 if __name__ == "__main__":
     main()
