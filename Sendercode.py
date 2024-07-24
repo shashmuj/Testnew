@@ -84,8 +84,8 @@ def main():
     send_custom_ipv4_packet(custom_header_params)
 
     print("Listening for responses from the receiver...")
-    # Use a more general filter to capture all IP packets from the receiver IP
-    sniff(filter=f"ip src {args.dst_ip}", iface=args.iface, prn=lambda p: handle_response(p, args.src_ip))
+    # Use the same interface to listen for responses
+    sniff(iface=args.iface, filter=f"ip src {args.dst_ip}", prn=lambda p: handle_response(p, args.src_ip))
 
 if __name__ == "__main__":
     main()
