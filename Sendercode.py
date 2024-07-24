@@ -1,8 +1,9 @@
-from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, checksum, sniff
+from scapy.all import sniff, IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, checksum
 import struct
 import argparse
+import sys
 
-# Define a custom header class for the sender
+# Define the custom header class for the sender
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
@@ -35,28 +36,28 @@ def send_custom_ipv4_packet(custom_header_params):
     print(repr(ip_packet))
     send(ip_packet, count=1)
 
-def handle_response(packet, expected_src_ip):
-    # Ensure IP layer is present
-    if IP in packet:
-        ip_header = packet[IP]
-        # Check if the packet's source IP matches the expected source IP
-        if ip_header.src == expected_src_ip:
-            print("=== Received Response Packet ===")
-            packet.show()
-            print("=== IP Header of Packet ===")
-            print(f"Source IP: {ip_header.src}")
-            print(f"Destination IP: {ip_header.dst}")
-            print(f"Protocol: {ip_header.proto}")
-            print(f"Version: {ip_header.version}")
-            print(f"IHL: {ip_header.ihl}")
-            print(f"TOS: {ip_header.tos}")
-            print(f"Total Length: {ip_header.len}")
-            print(f"Identification: {ip_header.id}")
-            print(f"Flags: {ip_header.flags}")
-            print(f"Fragment Offset: {ip_header.frag}")
-            print(f"TTL: {ip_header.ttl}")
-            print(f"Checksum: {hex(ip_header.chksum)}")
-            print(f"Options: {ip_header.options}")
+def handle_response(packet, receiver_ip):
+    ip_header = packet.getlayer(IP)
+    if ip_header and ip_header.src == receiver_ip:
+        print("=== Received Response Packet ===")
+        packet.show()
+
+        if MyCustomHeader in packet:
+            custom_header = packet[MyCustomHeader]
+            print("=== Custom Header ===")
+            print(f"Version: {custom_header.version}")
+            print(f"Header Length: {custom_header.header_length}")
+            print(f"Total Length: {custom_header.total_length}")
+            print(f"Identification: {custom_header.identification}")
+            print(f"Flags: {custom_header.flags}")
+            print(f"Fragment Offset: {custom_header.fragment_offset}")
+            print(f"TTL: {custom_header.ttl}")
+            print(f"Protocol: {custom_header.protocol}")
+            print(f"Checksum: {hex(custom_header.checksum)}")
+            print(f"Source IP: {custom_header.src}")
+            print(f"Destination IP: {custom_header.dst}")
+        else:
+            print("Received a packet with no custom header.")
 
 def main():
     parser = argparse.ArgumentParser(description="Send and receive custom IPv4 packets")
@@ -69,6 +70,7 @@ def main():
     parser.add_argument("--flags", type=int, default=0, help="Flags")
     parser.add_argument("--fragment_offset", type=int, default=0, help="Fragment offset")
     parser.add_argument("--iface", required=True, help="Network interface to sniff on")
+    parser.add_argument("--receiver_ip", required=True, help="Receiver IP address")
 
     args = parser.parse_args()
 
@@ -87,8 +89,8 @@ def main():
 
     print("Listening for responses from the receiver...")
     # Capture packets with a filter for the response
-    filter_str = f"ip src {args.dst_ip} and ip dst {args.src_ip}"
-    sniff(iface=args.iface, filter=filter_str, prn=lambda p: handle_response(p, args.dst_ip))
+    filter_str = f"ip src {args.receiver_ip} and ip dst {args.src_ip}"
+    sniff(iface=args.iface, filter=filter_str, prn=lambda p: handle_response(p, args.receiver_ip))
 
 if __name__ == "__main__":
     main()
