@@ -2,22 +2,23 @@ from scapy.all import sniff, IP, send, Raw, Packet
 from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, checksum
 import struct
 import argparse
+import sys
 
 # Define the custom header class for the receiver
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
-        BitField("version", 4, 4),                  
-        BitField("header_length", 5, 4),            
-        ShortField("total_length", 40),             
-        ShortField("identification", 0),            
-        BitField("flags", 0, 3),                    
-        BitField("fragment_offset", 0, 13),         
-        ByteField("ttl", 0),                        
-        ByteField("protocol", 0),                   
-        XShortField("checksum", 0),                 
-        IPField("src", "0.0.0.0"),                  
-        IPField("dst", "0.0.0.0")                   
+        BitField("version", 4, 4),
+        BitField("header_length", 5, 4),
+        ShortField("total_length", 40),
+        ShortField("identification", 0),
+        BitField("flags", 0, 3),
+        BitField("fragment_offset", 0, 13),
+        ByteField("ttl", 0),
+        ByteField("protocol", 0),
+        XShortField("checksum", 0),
+        IPField("src", "0.0.0.0"),
+        IPField("dst", "0.0.0.0")
     ]
 
     def post_build(self, p, pay):
@@ -56,33 +57,8 @@ def handle_packet(packet, sender_ip):
         response.show()
         send(response)
 
-        # Optionally, listen for the response packet here
-        print("Listening for response from sender...")
-        sniff(iface=args.iface, filter=f"ip src {ip_header.src}", count=1, prn=lambda p: handle_response(p, ip_header.src))
     else:
         print(f"Ignored packet from {ip_header.src} as it is not from the sender {sender_ip}")
-
-def handle_response(packet, sender_ip):
-    ip_header = packet.getlayer(IP)
-    if ip_header and ip_header.src == sender_ip:
-        print("=== Received Response Packet ===")
-        packet.show()
-        ip_header = packet.getlayer(IP)
-        if ip_header:
-            print("=== IP Header of Response ===")
-            print(f"Source IP: {ip_header.src}")
-            print(f"Destination IP: {ip_header.dst}")
-            print(f"Protocol: {ip_header.proto}")
-            print(f"Version: {ip_header.version}")
-            print(f"IHL: {ip_header.ihl}")
-            print(f"TOS: {ip_header.tos}")
-            print(f"Total Length: {ip_header.len}")
-            print(f"Identification: {ip_header.id}")
-            print(f"Flags: {ip_header.flags}")
-            print(f"Fragment Offset: {ip_header.frag}")
-            print(f"TTL: {ip_header.ttl}")
-            print(f"Checksum: {hex(ip_header.chksum)}")
-            print(f"Options: {ip_header.options}")
 
 def main():
     parser = argparse.ArgumentParser(description="Receive and respond to custom IPv4 packets")
@@ -94,8 +70,12 @@ def main():
     # Construct the filter to only capture packets from the sender IP
     filter_str = f"ip src {args.sender_ip}"
 
-    print("Starting packet sniffing...")
-    sniff(iface=args.iface, filter=filter_str, prn=lambda packet: handle_packet(packet, args.sender_ip))
+    try:
+        print("Starting packet sniffing...")
+        sniff(iface=args.iface, filter=filter_str, prn=lambda packet: handle_packet(packet, args.sender_ip))
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

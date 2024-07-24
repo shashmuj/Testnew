@@ -1,24 +1,23 @@
-from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, checksum
+from scapy.all import IP, send, Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, checksum, sniff
 import struct
 import argparse
-from scapy.all import sniff
 
 # Define a custom header class for the sender
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
-        BitField("version", 4, 4),                  
-        BitField("header_length", 5, 4),            
-        ShortField("total_length", 40),             
-        ShortField("identification", 0),            
-        BitField("flags", 0, 3),                    
-        BitField("fragment_offset", 0, 13),         
-        ByteField("ttl", 0),                        
-        ByteField("protocol", 0),                   
-        XShortField("checksum", 0),                 
-        IPField("src", "0.0.0.0"),                  
-        IPField("dst", "0.0.0.0"),                  
-        IntField("seq_num", 0)                      
+        BitField("version", 4, 4),
+        BitField("header_length", 5, 4),
+        ShortField("total_length", 40),
+        ShortField("identification", 0),
+        BitField("flags", 0, 3),
+        BitField("fragment_offset", 0, 13),
+        ByteField("ttl", 0),
+        ByteField("protocol", 0),
+        XShortField("checksum", 0),
+        IPField("src", "0.0.0.0"),
+        IPField("dst", "0.0.0.0"),
+        IntField("seq_num", 0)
     ]
 
     def post_build(self, p, pay):
@@ -34,12 +33,13 @@ def send_custom_ipv4_packet(custom_header_params):
     print("=== Sending Custom Packet ===")
     custom_header.show()
     print(repr(ip_packet))
-    send(ip_packet,count=1)
+    send(ip_packet, count=1)
 
-def handle_response(packet, receiver_ip):
-    if IP in packet and packet[IP].src == receiver_ip:
+def handle_response(packet, sender_ip):
+    if IP in packet and packet[IP].src == sender_ip:
         print("=== Received Response Packet ===")
         packet.show()
+        
         ip_header = packet.getlayer(IP)
         if ip_header:
             print("=== IP Header of Response ===")
