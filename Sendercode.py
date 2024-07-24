@@ -3,6 +3,7 @@ import struct
 import argparse
 import sys
 
+# Define the custom header class for the sender
 class MyCustomHeader(Packet):
     name = "MyCustomHeader"
     fields_desc = [
@@ -40,10 +41,23 @@ def handle_response(packet, receiver_ip):
     if ip_header and ip_header.src == receiver_ip:
         print("=== Received Response Packet ===")
         packet.show()
-        # Optionally print packet summary for quick debug
-        print(f"Response Packet Summary: {packet.summary()}")
-    else:
-        print(f"Ignored packet from {ip_header.src} as it is not from the receiver {receiver_ip}")
+
+        if MyCustomHeader in packet:
+            custom_header = packet[MyCustomHeader]
+            print("=== Custom Header ===")
+            print(f"Version: {custom_header.version}")
+            print(f"Header Length: {custom_header.header_length}")
+            print(f"Total Length: {custom_header.total_length}")
+            print(f"Identification: {custom_header.identification}")
+            print(f"Flags: {custom_header.flags}")
+            print(f"Fragment Offset: {custom_header.fragment_offset}")
+            print(f"TTL: {custom_header.ttl}")
+            print(f"Protocol: {custom_header.protocol}")
+            print(f"Checksum: {hex(custom_header.checksum)}")
+            print(f"Source IP: {custom_header.src}")
+            print(f"Destination IP: {custom_header.dst}")
+        else:
+            print("Received a packet with no custom header.")
 
 def main():
     parser = argparse.ArgumentParser(description="Send and receive custom IPv4 packets")
