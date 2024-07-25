@@ -1,4 +1,4 @@
-from scapy.all import sniff, IP, send, Raw, Packet
+from scapy.all import sniff, IP, send, Raw, Packet, checksum
 from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, IntField
 import struct
 import argparse
@@ -42,14 +42,30 @@ def calculate_ip_checksum(header):
         header += b'\x00'
     return checksum(header)
 
+def calculate_tcp_checksum(ip_header, tcp_header, data):
+    pseudo_header = struct.pack(
+        '!4s4sBBH',
+        struct.unpack('!4s', ip_header[12:16])[0],  # Source IP
+        struct.unpack('!4s', ip_header[16:20])[0],  # Destination IP
+        0,  # Reserved, must be zero
+        6,  # Protocol (TCP)
+        len(tcp_header) + len(data)  # TCP length
+    )
+    tcp_data = pseudo_header + tcp_header + data
+    return checksum(tcp_data)
+
 def handle_packet(packet, sender_ip):
     ip_header = packet.getlayer(IP)
-    if ip_header and ip_header.src == sender_ip:
-        print("=== Received Packet ===")
-        packet.show()
 
-        if MyCustomHeader in packet:
-            custom_header = packet[MyCustomHeader]
+    if MyCustomHeader in packet:
+        custom_header = packet[MyCustomHeader]
+        
+        # Ensure the packet is from the sender IP
+        if ip_header.src == sender_ip:
+            print("=== Received Packet ===")
+            packet.show()
+
+            # Print the details of the custom header
             print("=== Custom Header ===")
             print(f"Version: {custom_header.version}")
             print(f"IHL: {custom_header.ihl}")
@@ -88,22 +104,35 @@ def handle_packet(packet, sender_ip):
             )
             if custom_header.header_checksum != calculate_ip_checksum(ip_header_data):
                 print("Invalid IP checksum.")
+            else:
+                print("Valid IP checksum.")
 
-            # TCP checksum validation is not implemented in detail
-            if custom_header.tcp_checksum != 0:  # Placeholder check
-                print("TCP checksum validation is not implemented.")
+            # Validate TCP checksum
+            tcp_header = struct.pack(
+                '!HHLLBBHHH',
+                custom_header.src_port,
+                custom_header.dst_port,
+                custom_header.seq_num,
+                custom_header.ack_num,
+                (custom_header.data_offset << 4) | (custom_header.tcp_flags >> 8),
+                custom_header.tcp_flags & 0xFF,
+                custom_header.tcp_checksum,
+                custom_header.window_size,
+                custom_header.urgent_pointer
+            )
+            if custom_header.tcp_checksum != calculate_tcp_checksum(ip_header_data, tcp_header, b''):
+                print("Invalid TCP checksum.")
+            else:
+                print("Valid TCP checksum.")
+
+            # Prepare and send a response packet
+            response = IP(src=ip_header.dst, dst=ip_header.src) / Raw(load="Packet received")
+            print("=== Sending Response Packet ===")
+            response.show()
+            send(response)
 
         else:
-            print("Received a packet with no custom header.")
-
-        # Prepare and send a response packet
-        response = IP(src=ip_header.dst, dst=ip_header.src) / Raw(load="Packet received")
-        print("=== Sending Response Packet ===")
-        response.show()
-        send(response)
-
-    else:
-        print(f"Ignored packet from {ip_header.src} as it is not from the sender {sender_ip}")
+            print(f"Ignored packet from {ip_header.src} as it is not from the sender {sender_ip}")
 
 def main():
     parser = argparse.ArgumentParser(description="Receive and respond to custom IPv4 packets")
