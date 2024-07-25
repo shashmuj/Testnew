@@ -1,4 +1,4 @@
-from scapy.all import sniff, IP, send, Raw, Packet, checksum
+from scapy.all import sniff, IP, Raw, Packet, checksum
 from scapy.fields import BitField, ShortField, ByteField, IPField, XShortField, IntField
 import struct
 import argparse
@@ -58,6 +58,29 @@ def calculate_tcp_checksum(ip_header, tcp_header, data):
     tcp_data = pseudo_header + tcp_header + data
     return checksum(tcp_data)
 
+def print_custom_header(custom_header):
+    print("=== Custom Header ===")
+    print(f"Version: {custom_header.version}")
+    print(f"IHL: {custom_header.ihl}")
+    print(f"Total Length: {custom_header.total_length}")
+    print(f"Identification: {custom_header.identification}")
+    print(f"Flags: {custom_header.flags}")
+    print(f"Fragment Offset: {custom_header.fragment_offset}")
+    print(f"TTL: {custom_header.ttl}")
+    print(f"Protocol: {custom_header.protocol}")
+    print(f"Header Checksum: {hex(custom_header.header_checksum)}")
+    print(f"Source IP: {custom_header.src}")
+    print(f"Destination IP: {custom_header.dst}")
+    print(f"Source Port: {custom_header.src_port}")
+    print(f"Destination Port: {custom_header.dst_port}")
+    print(f"Sequence Number: {custom_header.seq_num}")
+    print(f"Acknowledgment Number: {custom_header.ack_num}")
+    print(f"Data Offset: {custom_header.data_offset}")
+    print(f"TCP Flags: {custom_header.tcp_flags}")
+    print(f"TCP Checksum: {hex(custom_header.tcp_checksum)}")
+    print(f"Window Size: {custom_header.window_size}")
+    print(f"Urgent Pointer: {custom_header.urgent_pointer}")
+
 def handle_packet(packet, sender_ip):
     if packet.haslayer(IP):
         ip_layer = packet.getlayer(IP)
@@ -71,27 +94,7 @@ def handle_packet(packet, sender_ip):
                 packet.show()
 
                 # Print the details of the custom header
-                print("=== Custom Header ===")
-                print(f"Version: {custom_header.version}")
-                print(f"IHL: {custom_header.ihl}")
-                print(f"Total Length: {custom_header.total_length}")
-                print(f"Identification: {custom_header.identification}")
-                print(f"Flags: {custom_header.flags}")
-                print(f"Fragment Offset: {custom_header.fragment_offset}")
-                print(f"TTL: {custom_header.ttl}")
-                print(f"Protocol: {custom_header.protocol}")
-                print(f"Header Checksum: {hex(custom_header.header_checksum)}")
-                print(f"Source IP: {custom_header.src}")
-                print(f"Destination IP: {custom_header.dst}")
-                print(f"Source Port: {custom_header.src_port}")
-                print(f"Destination Port: {custom_header.dst_port}")
-                print(f"Sequence Number: {custom_header.seq_num}")
-                print(f"Acknowledgment Number: {custom_header.ack_num}")
-                print(f"Data Offset: {custom_header.data_offset}")
-                print(f"TCP Flags: {custom_header.tcp_flags}")
-                print(f"TCP Checksum: {hex(custom_header.tcp_checksum)}")
-                print(f"Window Size: {custom_header.window_size}")
-                print(f"Urgent Pointer: {custom_header.urgent_pointer}")
+                print_custom_header(custom_header)
 
                 # Validate IP header checksum
                 ip_header_data = struct.pack(
@@ -122,7 +125,7 @@ def handle_packet(packet, sender_ip):
                     (custom_header.data_offset << 4) | (custom_header.tcp_flags >> 8),
                     custom_header.tcp_flags & 0xFF,
                     custom_header.window_size,
-                    custom_header.tcp_checksum,
+                    0,  # Placeholder for TCP checksum
                     custom_header.urgent_pointer
                 )
                 if custom_header.tcp_checksum != calculate_tcp_checksum(ip_layer, tcp_header, b''):

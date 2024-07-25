@@ -1,7 +1,6 @@
 from scapy.all import Packet, BitField, ShortField, ByteField, IPField, XShortField, IntField, Raw, send, sniff, IP, TCP
 import argparse
 import random
-import socket
 import struct
 
 # Define the custom header class for the sender
@@ -16,7 +15,7 @@ class MyCustomHeader(Packet):
         BitField("fragment_offset", 0, 13),
         ByteField("ttl", 64),
         ByteField("protocol", 253),  # Custom protocol number
-        XShortField("header_checksum", 0),
+        XShortField("header_checksum", 0),  # IP header checksum
         IPField("src", "0.0.0.0"),
         IPField("dst", "0.0.0.0"),
         ShortField("src_port", 12345),
@@ -25,20 +24,20 @@ class MyCustomHeader(Packet):
         IntField("ack_num", 0),
         BitField("data_offset", 5, 4),
         BitField("tcp_flags", 0, 9),
-        ShortField("tcp_checksum", 0),
+        ShortField("tcp_checksum", 0),  # TCP checksum
         ShortField("window_size", 8192),
         ShortField("urgent_pointer", 0),
     ]
 
     def post_build(self, p, pay):
-        # Calculate IP header checksum if not set
+        # Calculate and set the IP header checksum if not set
         if self.header_checksum == 0:
             ip_header = p[:20]  # IP header is the first 20 bytes
             ip_checksum = self.calculate_ip_checksum(ip_header)
             chksum_bytes = struct.pack('!H', ip_checksum)
             p = p[:10] + chksum_bytes + p[12:]
 
-        # No need to manually calculate TCP checksum; Scapy will handle it
+        # TCP checksum will be handled by Scapy
         return p + pay
 
     def calculate_ip_checksum(self, header):
@@ -48,6 +47,30 @@ class MyCustomHeader(Packet):
         s = (s >> 16) + (s & 0xFFFF)
         s = ~s & 0xFFFF
         return s
+
+def print_ip_header(ip_layer):
+    print("=== IP Header Details ===")
+    print(f"Version: {ip_layer.version}")
+    print(f"IHL: {ip_layer.ihl}")
+    print(f"Total Length: {ip_layer.len}")
+    print(f"Identification: {ip_layer.id}")
+    print(f"Flags: {ip_layer.flags}")
+    print(f"Fragment Offset: {ip_layer.frag}")
+    print(f"TTL: {ip_layer.ttl}")
+    print(f"Protocol: {ip_layer.proto}")
+    print(f"Source IP: {ip_layer.src}")
+    print(f"Destination IP: {ip_layer.dst}")
+
+def print_tcp_header(tcp_layer):
+    print("=== TCP Header Details ===")
+    print(f"Source Port: {tcp_layer.sport}")
+    print(f"Destination Port: {tcp_layer.dport}")
+    print(f"Sequence Number: {tcp_layer.seq}")
+    print(f"Acknowledgment Number: {tcp_layer.ack}")
+    print(f"Data Offset: {tcp_layer.dataofs}")
+    print(f"TCP Flags: {tcp_layer.flags}")
+    print(f"Window Size: {tcp_layer.window}")
+    print(f"Urgent Pointer: {tcp_layer.urgptr}")
 
 def send_custom_ipv4_packet(custom_header_params):
     # Create the IP layer
@@ -65,17 +88,7 @@ def send_custom_ipv4_packet(custom_header_params):
     )
 
     # Print IP header details
-    print("=== IP Header Details ===")
-    print(f"Version: {custom_header_params['version']}")
-    print(f"IHL: {custom_header_params['ihl']}")
-    print(f"Total Length: {custom_header_params['total_length']}")
-    print(f"Identification: {custom_header_params['identification']}")
-    print(f"Flags: {custom_header_params['flags']}")
-    print(f"Fragment Offset: {custom_header_params['fragment_offset']}")
-    print(f"TTL: {custom_header_params['ttl']}")
-    print(f"Protocol: {custom_header_params['protocol']}")
-    print(f"Source IP: {custom_header_params['src']}")
-    print(f"Destination IP: {custom_header_params['dst']}")
+    print_ip_header(ip_layer)
 
     # Create the TCP layer
     tcp_layer = TCP(
@@ -90,15 +103,7 @@ def send_custom_ipv4_packet(custom_header_params):
     )
 
     # Print TCP header details
-    print("=== TCP Header Details ===")
-    print(f"Source Port: {custom_header_params['src_port']}")
-    print(f"Destination Port: {custom_header_params['dst_port']}")
-    print(f"Sequence Number: {custom_header_params['seq_num']}")
-    print(f"Acknowledgment Number: {custom_header_params['ack_num']}")
-    print(f"Data Offset: {custom_header_params['data_offset']}")
-    print(f"TCP Flags: {custom_header_params['tcp_flags']}")
-    print(f"Window Size: {custom_header_params['window_size']}")
-    print(f"Urgent Pointer: {custom_header_params['urgent_pointer']}")
+    print_tcp_header(tcp_layer)
 
     # Create the custom header
     custom_header = MyCustomHeader(**custom_header_params)
@@ -106,10 +111,6 @@ def send_custom_ipv4_packet(custom_header_params):
     # Build the final packet
     raw_packet = custom_header.build()
     
-    # Print final packet details
-    print("=== Final Packet Details ===")
-    print(f"Raw Packet: {raw_packet.hex()}")
-
     # Combine IP layer and TCP layer with custom header
     packet = ip_layer / tcp_layer / Raw(load=raw_packet)
 
@@ -121,7 +122,13 @@ def send_custom_ipv4_packet(custom_header_params):
 def handle_response(packet):
     if packet.haslayer(Raw):
         response = packet[Raw].load
+        # Extract IP and TCP layers from the response
+        ip_layer = packet[IP]
+        tcp_layer = packet[TCP]
         print("=== Received Response Packet ===")
+        print_ip_header(ip_layer)
+        print_tcp_header(tcp_layer)
+        print("Payload:")
         print(response.decode('utf-8', errors='ignore'))  # Decode and handle non-UTF8 responses gracefully
 
 def main():
@@ -129,14 +136,6 @@ def main():
     parser.add_argument("--iface", required=True, help="Network interface to use")
     parser.add_argument("--src", required=True, help="Source IP address")
     parser.add_argument("--dst", required=True, help="Destination IP address")
-    parser.add_argument("--version", type=int, default=4, help="IP version")
-    parser.add_argument("--ihl", type=int, default=5, help="IP header length")
-    parser.add_argument("--total_length", type=int, default=40, help="Total length")
-    parser.add_argument("--identification", type=int, default=0, help="Identification")
-    parser.add_argument("--flags", type=int, default=0, help="Flags")
-    parser.add_argument("--fragment_offset", type=int, default=0, help="Fragment offset")
-    parser.add_argument("--ttl", type=int, default=64, help="Time to live")
-    parser.add_argument("--protocol", type=int, default=253, help="Protocol number")
     parser.add_argument("--src_port", type=int, default=12345, help="Source port")
     parser.add_argument("--dst_port", type=int, default=80, help="Destination port")
     parser.add_argument("--seq_num", type=int, default=random.randint(1, 10000), help="Sequence number")
@@ -150,15 +149,15 @@ def main():
 
     # Prepare and send a custom packet
     custom_header_params = {
-        "version": args.version,
-        "ihl": args.ihl,
-        "total_length": args.total_length,
-        "identification": args.identification,
-        "flags": args.flags,
-        "fragment_offset": args.fragment_offset,
-        "ttl": args.ttl,
-        "protocol": args.protocol,
-        "header_checksum": 0,  # Placeholder, will be updated
+        "version": 4,
+        "ihl": 5,
+        "total_length": 40,
+        "identification": 0,
+        "flags": 0,
+        "fragment_offset": 0,
+        "ttl": 64,
+        "protocol": 253,  # Custom protocol number
+        "header_checksum": 0,  # Placeholder for IP checksum
         "src": args.src,
         "dst": args.dst,
         "src_port": args.src_port,
@@ -167,7 +166,7 @@ def main():
         "ack_num": args.ack_num,
         "data_offset": args.data_offset,
         "tcp_flags": args.tcp_flags,
-        "tcp_checksum": 0,  # Default value
+        "tcp_checksum": 0,  # Placeholder for TCP checksum
         "window_size": args.window_size,
         "urgent_pointer": args.urgent_pointer
     }
