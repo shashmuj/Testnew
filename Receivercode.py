@@ -36,30 +36,31 @@ def process_packet(packet):
         if packet[CustomProtocol].src == src_ip:
             # Packet is of the custom protocol and from the intended source IP
             print("Received custom protocol packet:")
-            packet.show()
+            packet[CustomProtocol].show()
         else:
             # Packet is of the custom protocol but from an unexpected source IP
             print("Received custom protocol packet from an unexpected source IP:")
-            packet.show()
+            packet[CustomProtocol].show()
     else:
         # Packet is not of the custom protocol
         print("Received packet with an unexpected protocol:")
         packet.show()
 
 def main():
-    parser = argparse.ArgumentParser(description="Receive and process packets.")
+    parser = argparse.ArgumentParser(description="Receive and process packets from a specific source IP address.")
     parser.add_argument("src_ip", help="Source IP address")
-    parser.add_argument("dst_ip", help="Destination IP address")
+    parser.add_argument("iface", help="Network interface to use")
     args = parser.parse_args()
     
     global src_ip  # Use a global variable to access in process_packet
     src_ip = args.src_ip
+    iface = args.iface
     
-    # Define the filter expression to match packets from the specified source IP and destination IP
-    filter_expr = f"ip src {src_ip} and ip dst {args.dst_ip} and ip proto 253"
+    # Define the filter expression to match packets from the specified source IP address
+    filter_expr = f"ip src {src_ip}"
     
-    print("Sniffing for packets...")
-    packets = sniff(filter=filter_expr, iface=conf.iface, timeout=10)  # Timeout to prevent indefinite blocking
+    print(f"Sniffing for packets from {src_ip} on interface {iface}...")
+    packets = sniff(filter=filter_expr, iface=iface, timeout=10)  # Timeout to prevent indefinite blocking
 
     if not packets:
         print("No packets received.")

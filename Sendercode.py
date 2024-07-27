@@ -1,7 +1,8 @@
-from scapy.all import *
+from scapy.all import Packet,ByteField,ShortField,IntField,XShortField,IPField,FlagsField,send,sniff
 import argparse
 import socket
 import struct
+from scapy.layers.inet import IP
 
 # Define the custom protocol with both IPv4 and TCP fields
 class CustomProtocol(Packet):
@@ -86,11 +87,8 @@ def create_packet(dst_ip, src_ip, iface, custom_protocol_args):
     return packet
 
 def send_custom_packet(packet, iface):
-    # Create a raw socket for sending the packet
-    s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-    s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-    s.sendto(bytes(packet), (packet.dst, 0))
-    s.close()
+    # Use Scapy's send function to send the packet
+    send(IP(src=packet.src, dst=packet.dst, proto=packet.proto)/packet, iface=iface)
 
 def main():
     parser = argparse.ArgumentParser(description="Send a custom protocol packet and receive response.")
@@ -122,7 +120,7 @@ def main():
     print("Sending packet:")
     packet.show()
 
-    # Send packet
+    # Send packet using Scapy
     send_custom_packet(packet, args.iface)
     print("Packet sent. Waiting for response...")
 
