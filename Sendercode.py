@@ -1,14 +1,12 @@
-from scapy.all import Packet,ByteField,ShortField,IntField,XShortField,IPField,FlagsField,send,sniff
+from scapy.all import Packet, ByteField, ShortField, IntField, XShortField, IPField, FlagsField, send, sniff
 import argparse
 import socket
 import struct
 from scapy.layers.inet import IP
 
-# Define the custom protocol with both IPv4 and TCP fields
 class CustomProtocol(Packet):
     name = "CustomProtocol"
     fields_desc = [
-        # IPv4 fields
         ByteField("version", 4),
         ByteField("ihl", 5),
         ByteField("tos", 0),
@@ -20,7 +18,6 @@ class CustomProtocol(Packet):
         XShortField("chksum", None),
         IPField("src", "0.0.0.0"),
         IPField("dst", "0.0.0.0"),
-        # TCP fields
         ShortField("sport", 12345),
         ShortField("dport", 80),
         IntField("seq", 0),
@@ -34,7 +31,6 @@ class CustomProtocol(Packet):
     ]
 
 def calculate_checksum(data):
-    # Helper function to calculate the checksum
     if len(data) % 2 != 0:
         data += b'\x00'
     s = sum(struct.unpack('!%sH' % (len(data) // 2), data))
@@ -43,59 +39,59 @@ def calculate_checksum(data):
     return ~s & 0xFFFF
 
 def calculate_checksums(packet):
-    # Calculate IPv4 header checksum
-    ip_header = bytes(packet)[:packet.ihl * 4]  # Extract the IPv4 header
+    ip_header = bytes(packet)[:packet.ihl * 4]
     ip_checksum = calculate_checksum(ip_header)
     packet.chksum = ip_checksum
     
-    # Calculate TCP checksum
-    tcp_header = bytes(packet)[packet.ihl * 4:]  # Extract the TCP header
+    tcp_header = bytes(packet)[packet.ihl * 4:]
     pseudo_header = b''.join([
         socket.inet_aton(packet.src),
         socket.inet_aton(packet.dst),
-        b'\x00\x06',  # Protocol number for TCP
-        struct.pack('!H', len(tcp_header))  # TCP Length
+        b'\x00\x06',
+        struct.pack('!H', len(tcp_header))
     ])
     tcp_checksum = calculate_checksum(pseudo_header + tcp_header)
     packet.tcp_chksum = tcp_checksum
 
 def create_packet(dst_ip, src_ip, iface, custom_protocol_args):
-    packet = CustomProtocol(
-        version=custom_protocol_args['version'],
-        ihl=custom_protocol_args['ihl'],
-        tos=custom_protocol_args['tos'],
-        len=custom_protocol_args['ihl']*4 + 20,  # Header length in bytes
-        id=custom_protocol_args['id'],
-        frag_off=custom_protocol_args['frag_off'],
-        ttl=custom_protocol_args['ttl'],
-        proto=custom_protocol_args['proto'],
-        src=src_ip,
-        dst=dst_ip,
-        sport=custom_protocol_args['sport'],
-        dport=custom_protocol_args['dport'],
-        seq=custom_protocol_args['seq'],
-        ack=custom_protocol_args['ack'],
-        dataofs=custom_protocol_args['dataofs'],
-        flags=custom_protocol_args['flags'],
-        window=custom_protocol_args['window'],
-        urgptr=custom_protocol_args['urgptr']
-    )
-    
-    # Calculate checksums
-    calculate_checksums(packet)
-    
-    return packet
+    try:
+        packet = CustomProtocol(
+            version=custom_protocol_args['version'],
+            ihl=custom_protocol_args['ihl'],
+            tos=custom_protocol_args['tos'],
+            len=custom_protocol_args['ihl']*4 + 20,
+            id=custom_protocol_args['id'],
+            frag_off=custom_protocol_args['frag_off'],
+            ttl=custom_protocol_args['ttl'],
+            proto=custom_protocol_args['proto'],
+            src=src_ip,
+            dst=dst_ip,
+            sport=custom_protocol_args['sport'],
+            dport=custom_protocol_args['dport'],
+            seq=custom_protocol_args['seq'],
+            ack=custom_protocol_args['ack'],
+            dataofs=custom_protocol_args['dataofs'],
+            flags=custom_protocol_args['flags'],
+            window=custom_protocol_args['window'],
+            urgptr=custom_protocol_args['urgptr']
+        )
+        calculate_checksums(packet)
+        return packet
+    except Exception as e:
+        print(f"Error creating packet: {e}")
+        return None
 
 def send_custom_packet(packet, iface):
-    # Use Scapy's send function to send the packet
-    send(IP(src=packet.src, dst=packet.dst, proto=packet.proto)/packet, iface=iface)
+    if packet:
+        send(IP(src=packet.src, dst=packet.dst, proto=packet.proto)/packet, iface=iface)
+    else:
+        print("No packet to send.")
 
 def main():
     parser = argparse.ArgumentParser(description="Send a custom protocol packet and receive response.")
     parser.add_argument("dst_ip", help="Destination IP address")
     parser.add_argument("src_ip", help="Source IP address")
     parser.add_argument("iface", help="Network interface to use")
-    # Command-line arguments for custom protocol fields
     parser.add_argument("--version", type=int, default=4, help="IP version")
     parser.add_argument("--ihl", type=int, default=5, help="IP header length")
     parser.add_argument("--tos", type=int, default=0, help="Type of service")
@@ -116,30 +112,25 @@ def main():
     custom_protocol_args = vars(args)
     packet = create_packet(args.dst_ip, args.src_ip, args.iface, custom_protocol_args)
     
-    # Print the packet to be sent
-    print("Sending packet:")
-    packet.show()
-
-    # Send packet using Scapy
-    send_custom_packet(packet, args.iface)
-    print("Packet sent. Waiting for response...")
-
-    # Define the filter expression for receiving the response
-    filter_expr = f"ip src {args.dst_ip} and ip dst {args.src_ip} and ip proto 253"
-    
-    # Sniff for response packet
-    response = sniff(filter=filter_expr, iface=args.iface, timeout=10)  # Timeout to prevent indefinite blocking
-    
-    if not response:
-        print("No custom protocol packets received.")
-    else:
-        for pkt in response:
-            if CustomProtocol in pkt:
-                print("Received custom protocol response:")
-                pkt.show()
-            else:
-                print("Received packet with unexpected protocol:")
-                pkt.show()
+    if packet:
+        print("Sending packet:")
+        packet.show()
+        send_custom_packet(packet, args.iface)
+        print("Packet sent. Waiting for response...")
+        
+        filter_expr = f"ip src {args.dst_ip} and ip dst {args.src_ip} and ip proto {custom_protocol_args['proto']}"
+        response = sniff(filter=filter_expr, iface=args.iface, timeout=10)
+        
+        if not response:
+            print("No custom protocol packets received.")
+        else:
+            for pkt in response:
+                if CustomProtocol in pkt:
+                    print("Received custom protocol response:")
+                    pkt.show()
+                else:
+                    print("Received packet with unexpected protocol:")
+                    pkt.show()
 
 if __name__ == "__main__":
     main()
