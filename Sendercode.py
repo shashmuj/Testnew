@@ -1,6 +1,6 @@
 from scapy.all import *
 import argparse
-from scapy import TCP,IP
+from scapy.layers import IP,TCP
 
 def create_packet(dst_ip, src_ip, iface, protocol, sport, dport, seq, ack, flags, window, data_offset, ttl, tos, id, frag, ihl, version, length, checksum, options):
     # Create the IP header

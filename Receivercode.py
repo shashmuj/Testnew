@@ -1,5 +1,5 @@
+from scapy.layers import IP,TCP
 from scapy.all import *
-from scapy import TCP,IP
 import argparse
 
 def packet_sniff_filter(packet, sender_ip):
