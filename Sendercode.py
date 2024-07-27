@@ -1,5 +1,7 @@
 from scapy.all import *
 import argparse
+import socket
+import struct
 
 # Define the custom protocol with both IPv4 and TCP fields
 class CustomProtocol(Packet):
@@ -30,11 +32,38 @@ class CustomProtocol(Packet):
         ShortField("urgptr", 0)
     ]
 
+def calculate_checksum(data):
+    # Helper function to calculate the checksum
+    if len(data) % 2 != 0:
+        data += b'\x00'
+    s = sum(struct.unpack('!%sH' % (len(data) // 2), data))
+    s = (s >> 16) + (s & 0xFFFF)
+    s += s >> 16
+    return ~s & 0xFFFF
+
+def calculate_checksums(packet):
+    # Calculate IPv4 header checksum
+    ip_header = bytes(packet)[:packet.ihl * 4]  # Extract the IPv4 header
+    ip_checksum = calculate_checksum(ip_header)
+    packet.chksum = ip_checksum
+    
+    # Calculate TCP checksum
+    tcp_header = bytes(packet)[packet.ihl * 4:]  # Extract the TCP header
+    pseudo_header = b''.join([
+        socket.inet_aton(packet.src),
+        socket.inet_aton(packet.dst),
+        b'\x00\x06',  # Protocol number for TCP
+        struct.pack('!H', len(tcp_header))  # TCP Length
+    ])
+    tcp_checksum = calculate_checksum(pseudo_header + tcp_header)
+    packet.tcp_chksum = tcp_checksum
+
 def create_packet(dst_ip, src_ip, iface, custom_protocol_args):
     packet = CustomProtocol(
         version=custom_protocol_args['version'],
         ihl=custom_protocol_args['ihl'],
         tos=custom_protocol_args['tos'],
+        len=custom_protocol_args['ihl']*4 + 20,  # Header length in bytes
         id=custom_protocol_args['id'],
         frag_off=custom_protocol_args['frag_off'],
         ttl=custom_protocol_args['ttl'],
@@ -52,10 +81,16 @@ def create_packet(dst_ip, src_ip, iface, custom_protocol_args):
     )
     
     # Calculate checksums
-    packet.chksum = None
-    packet.tcp_chksum = None
+    calculate_checksums(packet)
     
     return packet
+
+def send_custom_packet(packet, iface):
+    # Create a raw socket for sending the packet
+    s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+    s.sendto(bytes(packet), (packet.dst, 0))
+    s.close()
 
 def main():
     parser = argparse.ArgumentParser(description="Send a custom protocol packet and receive response.")
@@ -88,7 +123,7 @@ def main():
     packet.show()
 
     # Send packet
-    sendp(Ether()/packet, iface=args.iface)
+    send_custom_packet(packet, args.iface)
     print("Packet sent. Waiting for response...")
 
     # Define the filter expression for receiving the response
