@@ -9,12 +9,12 @@ class CustomProtocol(Packet):
         ByteField("version", 4),
         ByteField("ihl", 5),
         ByteField("tos", 0),
-        ShortField("length", 0),  # Field name updated to match Scapy's naming conventions
+        ShortField("length", 0),  # Changed field name to match the default Scapy field name
         ShortField("id", 1),
         ShortField("frag_off", 0),
         ByteField("ttl", 64),
         ByteField("proto", 253),
-        XShortField("checksum", None),  # Field name updated to match Scapy's naming conventions
+        XShortField("checksum", None),
         IPField("src", "0.0.0.0"),
         IPField("dst", "0.0.0.0"),
         ShortField("sport", 12345),
@@ -25,7 +25,7 @@ class CustomProtocol(Packet):
         ByteField("reserved", 0),
         FlagsField("flags", 0, 8, ["F", "S", "R", "P", "A", "U", "E", "C"]),
         ShortField("window", 8192),
-        XShortField("tcp_chksum", None),  # Field name updated to match Scapy's naming conventions
+        XShortField("tcp_chksum", None),
         ShortField("urgptr", 0)
     ]
 
