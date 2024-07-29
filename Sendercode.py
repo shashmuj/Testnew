@@ -18,7 +18,7 @@ class CustomProtocol(Packet):
         IPField("src", "0.0.0.0"),
         IPField("dst", "0.0.0.0"),
         ShortField("sport", 12345),
-        ShortField("dport", 80),
+        ShortField("dport",54321),
         IntField("seq", 0),
         IntField("ack", 0),
         ByteField("dataofs", 5),
