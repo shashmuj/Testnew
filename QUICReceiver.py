@@ -1,6 +1,7 @@
 import argparse
 from scapy.all import *
-from scapy.layers.inet import IP,UDP
+from scapy.layers.inet import IP, UDP
+
 def packet_callback(packet):
     if IP in packet and UDP in packet:
         # Extract source IP and port
@@ -13,6 +14,10 @@ def packet_callback(packet):
 
         # Create a response packet
         response = IP(dst=src_ip) / UDP(dport=src_port) / Raw(load="Response from receiver")
+
+        # Display the response packet header
+        print("Response packet header:")
+        response.show2()
 
         # Send the response packet
         print(f"Sending response to {src_ip}:{src_port}")
