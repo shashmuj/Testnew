@@ -1,8 +1,9 @@
 import argparse
 from scapy.all import *
 from scapy.layers.inet import TCP, IP
+import random
 
-def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto):
+def send_tcp_packet(src_ip, dst_ip, src_port=12345, dst_port=54321, proto=6):
     # Create IP and TCP layers
     ip = IP(
         version=4,
@@ -20,13 +21,13 @@ def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto):
         sport=src_port,
         dport=dst_port,
         flags="S",
-        seq=1000,
-        ack=0,
-        dataofs=5,
-        reserved=0,
-        window=8192,
-        chksum=None,
-        urgptr=0
+        seq=random.randint(0, 4294967295),  # Random sequence number
+        ack=random.randint(0, 4294967295),  # Random acknowledgment number
+        dataofs=random.randint(5, 15),  # Random data offset (header length)
+        reserved=random.randint(0, 7),  # Random reserved bits
+        window=random.randint(0, 65535),  # Random window size
+        chksum=None,  # Checksum will be calculated by Scapy
+        urgptr=random.randint(0, 65535)  # Random urgent pointer
     )
 
     # Combine IP and TCP layers to form the packet
@@ -44,9 +45,11 @@ if __name__ == "__main__":
     # Required arguments
     parser.add_argument('src_ip', type=str, help='Source IP address')
     parser.add_argument('dst_ip', type=str, help='Destination IP address')
-    parser.add_argument('src_port', type=int, help='Source port number')
-    parser.add_argument('dst_port', type=int, help='Destination port number')
-    parser.add_argument('proto', type=int, help='IP protocol number')
+    
+    # Optional arguments
+    parser.add_argument('--src_port', type=int, default=12345, help='Source port number (default: 12345)')
+    parser.add_argument('--dst_port', type=int, default=54321, help='Destination port number (default: 54321)')
+    parser.add_argument('--proto', type=int, default=6, help='IP protocol number (default: 6)')
     
     # Parse arguments
     args = parser.parse_args()

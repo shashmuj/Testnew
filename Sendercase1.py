@@ -6,12 +6,12 @@ def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto):
     # Create IP and TCP layers
     ip = IP(
         version=4,
-        ihl=5,
+        ihl=5,  # IP header length (5 means no options, total header length is 20 bytes)
         tos=0,
         id=54321,
         frag=0,
         ttl=64,
-        proto=proto,
+        proto=proto,  # Custom protocol number
         chksum=None,
         src=src_ip,
         dst=dst_ip
@@ -19,10 +19,10 @@ def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto):
     tcp = TCP(
         sport=src_port,
         dport=dst_port,
-        flags="S",
+        flags="S",  # SYN flag set
         seq=1000,
         ack=0,
-        dataofs=5,
+        dataofs=5,  # TCP header length (5 means no options, total header length is 20 bytes)
         reserved=0,
         window=8192,
         chksum=None,
