@@ -2,51 +2,31 @@ import argparse
 from scapy.all import *
 from scapy.layers.inet import UDP, IP
 
-def validate_checksum(packet):
-    # Validates the checksum for both IP and UDP layers
-    ip_checksum_valid = packet[IP].chksum == IP(bytes(packet[IP]))[IP].chksum
-    udp_checksum_valid = packet[UDP].chksum == UDP(bytes(packet[UDP]))[UDP].chksum
-    return ip_checksum_valid and udp_checksum_valid
-
 def packet_callback(packet):
     if IP in packet and UDP in packet:
-        if validate_checksum(packet):
-            print("Packet received:")
-            packet.show2()
-            # Send response packet
-            send_response_packet(packet)
-        else:
-            print("Invalid checksum.")
-
-def send_response_packet(packet):
-    # Extract details from received packet
-    src_ip = packet[IP].dst
-    dst_ip = packet[IP].src
-    src_port = packet[UDP].dport
-    dst_port = packet[UDP].sport
-    proto = packet[IP].proto
-
-    # Create response packet
-    ip = IP(
-        src=src_ip,
-        dst=dst_ip,
-        proto=proto
-    )
-    udp = UDP(
-        sport=src_port,
-        dport=dst_port
-    )
-
-    response_packet = ip / udp
-
-    # Send the response packet
-    send(response_packet)
-    print("Response packet sent:")
-    response_packet.show2()
+        print("Packet received:")
+        print("IP Header:")
+        print(f"  Version: {packet[IP].version}")
+        print(f"  IHL: {packet[IP].ihl}")
+        print(f"  TOS: {packet[IP].tos}")
+        print(f"  Length: {packet[IP].len}")
+        print(f"  ID: {packet[IP].id}")
+        print(f"  Flags: {packet[IP].flags}")
+        print(f"  Fragment Offset: {packet[IP].frag}")
+        print(f"  TTL: {packet[IP].ttl}")
+        print(f"  Protocol: {packet[IP].proto}")
+        print(f"  Checksum: {packet[IP].chksum}")
+        print(f"  Source IP: {packet[IP].src}")
+        print(f"  Destination IP: {packet[IP].dst}")
+        print("UDP Header:")
+        print(f"  Source Port: {packet[UDP].sport}")
+        print(f"  Destination Port: {packet[UDP].dport}")
+        print(f"  Length: {packet[UDP].len}")
+        print(f"  Checksum: {packet[UDP].chksum}")
 
 if __name__ == "__main__":
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description='Capture and respond to UDP packets from a specific source IP.')
+    parser = argparse.ArgumentParser(description='Capture and display UDP packets from a specific source IP.')
     parser.add_argument('src_ip', type=str, help='Source IP address to filter packets')
 
     # Parse arguments
