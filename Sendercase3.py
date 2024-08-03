@@ -1,55 +1,57 @@
 import argparse
+import random
 from scapy.all import *
 from scapy.layers.inet import TCP, IP
-import random
 
-def send_tcp_packet(src_ip, dst_ip, proto):
-    # Generate random source and destination ports
-    src_port = random.randint(1024, 65535)  # Random port number between 1024 and 65535
-    dst_port = random.randint(1024, 65535)  # Random port number between 1024 and 65535
+def send_tcp_packet(src_ip, dst_ip, dst_port, proto, num_packets):
+    for i in range(num_packets):
+        # Randomly allocate source port
+        src_port = random.randint(0, 65535)
+        
+        # Create IP and TCP layers
+        ip = IP(
+            version=4,
+            ihl=5,
+            tos=0,
+            id=54321,
+            frag=0,
+            ttl=64,
+            proto=proto,
+            chksum=None,
+            src=src_ip,
+            dst=dst_ip
+        )
+        tcp = TCP(
+            sport=src_port,
+            dport=dst_port,
+            flags="S",
+            seq=1000,
+            ack=0,
+            dataofs=5,
+            reserved=0,
+            window=8192,
+            chksum=None,
+            urgptr=0
+        )
 
-    # Create IP and TCP layers
-    ip = IP(
-        version=4,
-        ihl=5,
-        tos=random.randint(0, 255),
-        id=random.randint(0, 65535),
-        frag=0,
-        ttl=random.randint(1, 255),
-        proto=proto,
-        chksum=None,
-        src=src_ip,
-        dst=dst_ip
-    )
-    tcp = TCP(
-        sport=src_port,
-        dport=dst_port,
-        flags=random.choice("FSRPAUEC"),  # Random flag from TCP flags
-        seq=random.randint(0, 4294967295),  # Random sequence number
-        ack=random.randint(0, 4294967295),  # Random acknowledgment number
-        dataofs=random.randint(5, 15),  # Random data offset (header length)
-        reserved=random.randint(0, 7),  # Random reserved bits
-        window=random.randint(0, 65535),  # Random window size
-        chksum=None,  # Checksum will be calculated by Scapy
-        urgptr=random.randint(0, 65535)  # Random urgent pointer
-    )
+        # Combine IP and TCP layers to form the packet
+        packet = ip / tcp
 
-    # Combine IP and TCP layers to form the packet
-    packet = ip / tcp
-
-    # Send the packet
-    send(packet)
-    print("Packet sent:")
-    packet.show2()
+        # Send the packet
+        send(packet)
+        print(f"Packet {i + 1} sent with source port {src_port}:")
+        packet.show2()
 
 if __name__ == "__main__":
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description='Send a TCP packet with specified source and destination IPs and protocol.')
+    parser = argparse.ArgumentParser(description='Send TCP packets with randomly allocated source ports.')
     
     # Required arguments
     parser.add_argument('src_ip', type=str, help='Source IP address')
     parser.add_argument('dst_ip', type=str, help='Destination IP address')
+    parser.add_argument('dst_port', type=int, help='Destination port number')
     parser.add_argument('proto', type=int, help='IP protocol number')
+    parser.add_argument('--num_packets', type=int, default=5, help='Number of packets to send')
     
     # Parse arguments
     args = parser.parse_args()
@@ -58,5 +60,7 @@ if __name__ == "__main__":
     send_tcp_packet(
         src_ip=args.src_ip,
         dst_ip=args.dst_ip,
-        proto=args.proto
+        dst_port=args.dst_port,
+        proto=args.proto,
+        num_packets=args.num_packets
     )

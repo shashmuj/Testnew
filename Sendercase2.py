@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('src_port', type=int, help='Source port number')
     parser.add_argument('dst_port', type=int, help='Destination port number')
     parser.add_argument('proto', type=int, help='IP protocol number')
-    parser.add_argument('--num_packets', type=int, default=5, help='Number of packets to send')
+    parser.add_argument('--num_packets', type=int, default=1, help='Number of packets to send')
     
     # Parse arguments
     args = parser.parse_args()
