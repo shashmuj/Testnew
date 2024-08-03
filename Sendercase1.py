@@ -2,44 +2,45 @@ import argparse
 from scapy.all import *
 from scapy.layers.inet import TCP, IP
 
-def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto):
-    # Create IP and TCP layers
-    ip = IP(
-        version=4,
-        ihl=5,  # IP header length (5 means no options, total header length is 20 bytes)
-        tos=0,
-        id=54321,
-        frag=0,
-        ttl=64,
-        proto=proto,  # Custom protocol number
-        chksum=None,
-        src=src_ip,
-        dst=dst_ip
-    )
-    tcp = TCP(
-        sport=src_port,
-        dport=dst_port,
-        flags="S",  # SYN flag set
-        seq=1000,
-        ack=0,
-        dataofs=5,  # TCP header length (5 means no options, total header length is 20 bytes)
-        reserved=0,
-        window=8192,
-        chksum=None,
-        urgptr=0
-    )
+def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto, num_packets):
+    for i in range(num_packets):
+        # Create IP and TCP layers
+        ip = IP(
+            version=4,
+            ihl=5,
+            tos=0,
+            id=54321,
+            frag=0,
+            ttl=64,
+            proto=proto,
+            chksum=None,
+            src=src_ip,
+            dst=dst_ip
+        )
+        tcp = TCP(
+            sport=src_port,
+            dport=dst_port,
+            flags="S",
+            seq=1000 + (i * 1000),  # Example of broken sequence numbers
+            ack=0,
+            dataofs=5,
+            reserved=0,
+            window=8192,
+            chksum=None,
+            urgptr=0
+        )
 
-    # Combine IP and TCP layers to form the packet
-    packet = ip / tcp
+        # Combine IP and TCP layers to form the packet
+        packet = ip / tcp
 
-    # Send the packet
-    send(packet)
-    print("Packet sent:")
-    packet.show2()
+        # Send the packet
+        send(packet)
+        print(f"Packet {i + 1} sent:")
+        packet.show2()
 
 if __name__ == "__main__":
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description='Send a TCP packet with specified source and destination IPs and ports.')
+    parser = argparse.ArgumentParser(description='Send TCP packets with specified source and destination IPs and ports.')
     
     # Required arguments
     parser.add_argument('src_ip', type=str, help='Source IP address')
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('src_port', type=int, help='Source port number')
     parser.add_argument('dst_port', type=int, help='Destination port number')
     parser.add_argument('proto', type=int, help='IP protocol number')
+    parser.add_argument('--num_packets', type=int, default=5, help='Number of packets to send')
     
     # Parse arguments
     args = parser.parse_args()
@@ -57,5 +59,6 @@ if __name__ == "__main__":
         dst_ip=args.dst_ip,
         src_port=args.src_port,
         dst_port=args.dst_port,
-        proto=args.proto
+        proto=args.proto,
+        num_packets=args.num_packets
     )
