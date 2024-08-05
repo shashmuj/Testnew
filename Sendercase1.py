@@ -1,13 +1,9 @@
 import argparse
 from scapy.all import *
 from scapy.layers.inet import TCP, IP
-import random
 
 def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto, num_packets):
     for i in range(num_packets):
-        # Random integer to add to sequence number
-        random_offset = random.randint(1, 5000)
-        
         # Create IP and TCP layers
         ip = IP(
             version=4,
@@ -19,13 +15,13 @@ def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto, num_packets):
             proto=proto,
             chksum=None,
             src=src_ip,
-            dst=dst_ip
+            dst=dst_ipS
         )
         tcp = TCP(
             sport=src_port,
             dport=dst_port,
             flags="S",
-            seq=1000 + (i * 1000) + random_offset,  # More randomized sequence numbers
+            seq=1000 + (i * 1000),  # Example of broken sequence numbers
             ack=0,
             dataofs=5,
             reserved=0,
@@ -52,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('src_port', type=int, help='Source port number')
     parser.add_argument('dst_port', type=int, help='Destination port number')
     parser.add_argument('proto', type=int, help='IP protocol number')
-    parser.add_argument('--num_packets', type=int, default=3, help='Number of packets to send')
+    parser.add_argument('--num_packets', type=int, default=5, help='Number of packets to send')
     
     # Parse arguments
     args = parser.parse_args()
