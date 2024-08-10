@@ -3,11 +3,15 @@ from scapy.all import *
 from scapy.layers.inet import UDP, IP
 import random
 
+
+
+#We have defined this function to send UDP packet that has a broken source port.
 def send_udp_packet(src_ip, dst_ip, dst_port):
-    # Randomize source port
+    
     src_port = random.randint(1024, 65535)
 
-    # Create IP and UDP layers with all header fields
+   
+   # Here we create the IP and UDP layer , define their header fields.
     ip = IP(
         version=4,
         ihl=None,
@@ -29,14 +33,16 @@ def send_udp_packet(src_ip, dst_ip, dst_port):
         chksum=None
     )
 
-    # Combine IP and UDP layers to form the packet
+  
+    # The packet is constructed here and sent to the receiver.
     packet = ip / udp
 
-    # Send the packet
+  
     send(packet)
     print("Packet sent:")
     packet.show2()
 
+# The command line arguments are parsed and the function is called to send UDP packets as per the input arguments.
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Send a UDP packet with a random source port and specified source and destination IPs and port.')
     parser.add_argument('src_ip', type=str, help='Source IP address')

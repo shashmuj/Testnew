@@ -3,12 +3,20 @@ from scapy.all import *
 from scapy.layers.inet import TCP, IP
 import random
 
+
+# Function for defining the TCP header fields and IP header fields.
 def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto, num_packets):
+
+    # This loop sends number of packets.
     for i in range(num_packets):
-        # Random integer to add to sequence number
+        
+
+
+        # Here we have defined a random offset for sequence numbers for displaying broken behaviour.
         random_offset = random.randint(1, 5000)
         
-        # Create IP and TCP layers
+
+        # We have defined IP header fields here.
         ip = IP(
             version=4,
             ihl=5,
@@ -21,11 +29,15 @@ def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto, num_packets):
             src=src_ip,
             dst=dst_ip
         )
+
+
+
+        # Here the TCP header fields have been defined.
         tcp = TCP(
             sport=src_port,
             dport=dst_port,
             flags="S",
-            seq=1000 + (i * 1000) + random_offset,  # More randomized sequence numbers
+            seq=1000 + (i * 1000) + random_offset, 
             ack=0,
             dataofs=5,
             reserved=0,
@@ -34,19 +46,20 @@ def send_tcp_packet(src_ip, dst_ip, src_port, dst_port, proto, num_packets):
             urgptr=0
         )
 
-        # Combine IP and TCP layers to form the packet
+
+
+        # We built the packet with IP and TCP layers.
         packet = ip / tcp
 
-        # Send the packet
         send(packet)
         print(f"Packet {i + 1} sent:")
         packet.show2()
 
+
+# Here the required and optional arguments have been defined, which should be passed through the command line.
 if __name__ == "__main__":
-    # Set up command-line argument parsing
     parser = argparse.ArgumentParser(description='Send TCP packets with specified source and destination IPs and ports.')
     
-    # Required arguments
     parser.add_argument('src_ip', type=str, help='Source IP address')
     parser.add_argument('dst_ip', type=str, help='Destination IP address')
     parser.add_argument('src_port', type=int, help='Source port number')
@@ -54,10 +67,12 @@ if __name__ == "__main__":
     parser.add_argument('proto', type=int, help='IP protocol number')
     parser.add_argument('--num_packets', type=int, default=3, help='Number of packets to send')
     
-    # Parse arguments
     args = parser.parse_args()
     
-    # Call function with arguments
+
+
+
+#The function is called to send packets to the receiver destinaton IP address.
     send_tcp_packet(
         src_ip=args.src_ip,
         dst_ip=args.dst_ip,

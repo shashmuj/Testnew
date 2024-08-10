@@ -3,12 +3,15 @@ import random
 from scapy.all import *
 from scapy.layers.inet import TCP, IP
 
+# This function is defined to send TCP packets with random source ports.
+
 def send_tcp_packet(src_ip, dst_ip, dst_port, proto, num_packets):
     for i in range(num_packets):
-        # Randomly allocate source port
+
+        #The source port has been randomized.
         src_port = random.randint(0, 65535)
         
-        # Create IP and TCP layers
+        # The IP and TCP layers have been created.
         ip = IP(
             version=4,
             ihl=5,
@@ -34,29 +37,36 @@ def send_tcp_packet(src_ip, dst_ip, dst_port, proto, num_packets):
             urgptr=0
         )
 
-        # Combine IP and TCP layers to form the packet
+       # Here we combine the IP and TCP layers in the packet.
         packet = ip / tcp
 
-        # Send the packet
+      
+        # The packet is being sent to the receiver.
         send(packet)
         print(f"Packet {i + 1} sent with source port {src_port}:")
         packet.show2()
 
+
+
+
+# Here we pass the command line arguments that will be passed as input , either compulsory or optional.
 if __name__ == "__main__":
-    # Set up command-line argument parsing
+
+   
     parser = argparse.ArgumentParser(description='Send TCP packets with randomly allocated source ports.')
     
-    # Required arguments
+   
     parser.add_argument('src_ip', type=str, help='Source IP address')
     parser.add_argument('dst_ip', type=str, help='Destination IP address')
     parser.add_argument('dst_port', type=int, help='Destination port number')
     parser.add_argument('proto', type=int, help='IP protocol number')
     parser.add_argument('--num_packets', type=int, default=1, help='Number of packets to send')
     
-    # Parse arguments
+
     args = parser.parse_args()
     
-    # Call function with arguments
+   
+   # This function is called to pass the arguments.
     send_tcp_packet(
         src_ip=args.src_ip,
         dst_ip=args.dst_ip,

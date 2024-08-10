@@ -3,11 +3,16 @@ from scapy.all import *
 from scapy.layers.inet import UDP, IP
 import random
 
-def send_udp_packet(src_ip, src_port, dst_ip, dst_port):
-    # Randomize UDP length
-    udp_length = random.randint(8, 65535)  # Minimum UDP packet length is 8 bytes
 
-    # Create IP and UDP layers with all header fields
+# This function will create UDP packet and sent to the receiver.
+def send_udp_packet(src_ip, src_port, dst_ip, dst_port):
+    
+
+    # The UDP length is randomized here.
+    udp_length = random.randint(8, 65535) 
+
+   
+   #The IP layer and UDP layer header fields are defined here.
     ip = IP(
         version=4,
         ihl=None,
@@ -29,14 +34,18 @@ def send_udp_packet(src_ip, src_port, dst_ip, dst_port):
         chksum=None
     )
 
-    # Combine IP and UDP layers to form the packet
+   
+    #The IP and UDP layer are combined to form the packet.
     packet = ip / udp
 
-    # Send the packet
+   
+    # The packets are sent to the receiver.
     send(packet)
     print("Packet sent:")
     packet.show2()
 
+
+# The command line arguments are parsed here and function is called to send UDP packets with the usage of given arguments.
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Send a UDP packet with specified source and destination IPs and ports. UDP length is randomized.')
     parser.add_argument('src_ip', type=str, help='Source IP address')
